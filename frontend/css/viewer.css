@@ -1,0 +1,176 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#viewerRoot {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: #050505;
+  color: #f4f4f5;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+#viewerRoot {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+#viewerHeader {
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(150px, 1fr);
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid #27272a;
+  background: #09090b;
+  padding: 10px 18px;
+}
+
+.viewer-header-side {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+#viewerTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+#viewerSubtitle {
+  margin: 4px 0 0;
+  color: #a1a1aa;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+#backLink,
+#downloadLink {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #155e75;
+  background: #083344;
+  color: #67e8f9;
+  padding: 0 12px;
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+#backLink:hover,
+#downloadLink:hover {
+  background: #164e63;
+}
+
+#downloadLink {
+  justify-self: end;
+}
+
+.viewer-logo-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-width: 0;
+  border: 1px solid #e4e4e7;
+  background: #ffffff;
+  padding: 5px 12px;
+}
+
+.viewer-logo {
+  display: block;
+  height: auto;
+  object-fit: contain;
+}
+
+.viewer-logo-artemis {
+  width: 82px;
+  max-height: 24px;
+}
+
+.viewer-logo-phone-mapping {
+  width: 96px;
+  max-height: 26px;
+}
+
+#canvasWrap {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+#viewerCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#loadingPanel {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  max-width: min(420px, calc(100% - 36px));
+  border: 1px solid #3f3f46;
+  background: rgb(9 9 11 / 0.86);
+  color: #d4d4d8;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+#loadingPanel.is-hidden {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  #viewerHeader {
+    grid-template-columns: auto minmax(92px, 1fr) auto;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .viewer-logo-strip {
+    padding: 4px 7px;
+    gap: 7px;
+  }
+
+  .viewer-header-side {
+    gap: 8px;
+  }
+
+  #viewerTitle,
+  #viewerSubtitle {
+    display: none;
+  }
+
+  .viewer-logo-artemis {
+    width: 56px;
+    max-height: 18px;
+  }
+
+  .viewer-logo-phone-mapping {
+    width: 68px;
+    max-height: 20px;
+  }
+
+  #backLink,
+  #downloadLink {
+    min-height: 30px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+}

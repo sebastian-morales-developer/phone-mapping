@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Environment variables and secrets
+.env
+.env.*
+
+# Generated projects and outputs
+projects/
+
+# Logs
+*.log
+.dev-server.log
+.dev-server.pid
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

@@ -1,0 +1,214 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --page-bg: #08030f;
+  --panel-bg: #11091c;
+  --panel-bg-soft: #160d24;
+  --panel-border: #332047;
+  --panel-border-strong: #6d3bb5;
+  --text-muted: #c9b9df;
+  --text-soft: #e7daf7;
+  --accent: #a855f7;
+  --accent-strong: #c084fc;
+  --accent-deep: #4c1d95;
+  --accent-glow: rgb(168 85 247 / 0.28);
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgb(76 29 149 / 0.24), transparent 36rem),
+    linear-gradient(180deg, #0b0414 0%, var(--page-bg) 44%, #050208 100%);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background:
+    linear-gradient(180deg, rgb(8 3 15 / 0.98), rgb(8 3 15 / 0.92));
+  padding-top: 12px;
+}
+
+.brand-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgb(228 228 231);
+  background: #ffffff;
+  padding: clamp(12px, 3vw, 22px) clamp(14px, 4vw, 34px);
+  white-space: nowrap;
+}
+
+.brand-lockup {
+  display: flex;
+  width: min(100%, 720px);
+  align-items: center;
+  justify-content: center;
+  gap: clamp(34px, 10vw, 150px);
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.brand-logo {
+  display: block;
+  height: auto;
+  object-fit: contain;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.brand-logo-artemis {
+  width: clamp(132px, 24vw, 210px);
+  max-height: clamp(42px, 9vw, 78px);
+  object-position: left center;
+}
+
+.brand-logo-phone-mapping {
+  width: clamp(158px, 28vw, 280px);
+  max-height: clamp(50px, 10vw, 88px);
+  object-position: right center;
+}
+
+@media (max-width: 520px) {
+  .brand-strip {
+    margin-inline: -4px;
+    padding: 14px 10px;
+  }
+
+  .brand-lockup {
+    gap: clamp(20px, 8vw, 40px);
+  }
+
+  .brand-logo-artemis {
+    width: clamp(132px, 39vw, 178px);
+  }
+
+  .brand-logo-phone-mapping {
+    width: clamp(142px, 42vw, 190px);
+  }
+}
+
+.upload-tile {
+  display: grid;
+  min-height: 116px;
+  cursor: pointer;
+  grid-template-columns: 1fr;
+  align-content: space-between;
+  gap: 18px;
+  border: 1px solid var(--panel-border);
+  background: rgb(17 9 28 / 0.78);
+  padding: 16px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.025);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.upload-tile:hover,
+.upload-tile:focus-within {
+  border-color: rgb(192 132 252 / 0.72);
+  background: rgb(35 19 56 / 0.84);
+  box-shadow: 0 0 0 1px rgb(192 132 252 / 0.16);
+}
+
+.upload-tile.is-dragging {
+  border-color: var(--accent-strong);
+  background: rgb(76 29 149 / 0.26);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+.upload-tile.is-filled {
+  border-color: var(--accent-strong);
+  background:
+    linear-gradient(135deg, rgb(76 29 149 / 0.42), rgb(17 9 28 / 0.88));
+  box-shadow:
+    0 0 0 1px rgb(192 132 252 / 0.24),
+    0 0 28px rgb(124 58 237 / 0.12);
+}
+
+.upload-label {
+  color: white;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.upload-state {
+  min-height: 22px;
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.upload-tile.is-filled .upload-state {
+  color: #f0dcff;
+}
+
+#statusPanel {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+#healthBadge {
+  border-color: var(--panel-border-strong);
+  background: rgb(26 13 42 / 0.72);
+  color: #e9d5ff;
+}
+
+#submitButton {
+  background: linear-gradient(135deg, #7e22ce, #a855f7);
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgb(88 28 135 / 0.28);
+}
+
+#submitButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9333ea, #c084fc);
+}
+
+#submitButton:disabled {
+  background: #2b2136;
+  color: #8f7aa9;
+  box-shadow: none;
+}
+
+#refreshProjects,
+#projectsList a {
+  color: #d8b4fe;
+}
+
+#refreshProjects:hover,
+#projectsList a:hover {
+  color: #f3e8ff;
+}
+
+.border-zinc-800 {
+  border-color: var(--panel-border) !important;
+}
+
+.text-zinc-300,
+.text-zinc-400 {
+  color: var(--text-muted) !important;
+}
+
+aside,
+#statusPanel,
+#projectsList li {
+  border-color: var(--panel-border) !important;
+  background-color: rgb(17 9 28 / 0.66) !important;
+}
+
+#statusPanel {
+  background-color: rgb(9 4 16 / 0.86) !important;
+  color: var(--text-soft);
+}

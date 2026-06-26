@@ -1,0 +1,11 @@
+{
+  "watch": ["backend", "python_services"],
+  "ext": "js,json,py",
+  "ignore": [
+    "projects/**",
+    "frontend/**",
+    "node_modules/**",
+    ".dev-server.log",
+    ".dev-server.pid"
+  ]
+}

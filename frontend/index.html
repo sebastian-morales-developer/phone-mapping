@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phone Mapping V1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body class="min-h-screen bg-zinc-950 text-zinc-100">
+    <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+      <header class="app-header mb-6 border-b border-zinc-800 pb-5">
+        <div class="brand-strip">
+          <div class="brand-lockup">
+            <img class="brand-logo brand-logo-artemis" src="/logos/artemis_logo.png" alt="Artemis" />
+            <img
+              class="brand-logo brand-logo-phone-mapping"
+              src="/logos/artemis_phone_mapping_logo.png"
+              alt="Artemis Phone Mapping"
+            />
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 class="text-2xl font-semibold tracking-normal text-white">Phone Mapping V1</h1>
+            <p class="mt-1 text-sm text-zinc-400">Create 3D models from a house using phone photos.</p>
+          </div>
+          <div id="healthBadge" class="rounded border border-zinc-800 px-3 py-2 text-sm text-zinc-400">
+            Checking service
+          </div>
+        </div>
+      </header>
+
+      <section class="grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)]">
+        <form id="projectForm" class="space-y-5" enctype="multipart/form-data">
+          <div class="grid gap-4 md:grid-cols-2">
+            <label class="upload-tile md:col-span-2" data-required="true">
+              <span class="upload-label">front</span>
+              <span class="upload-state" data-state-for="front">Required</span>
+              <input class="sr-only" type="file" name="front" accept="image/jpeg,image/png,image/webp" required />
+            </label>
+
+            <label class="upload-tile">
+              <span class="upload-label">left_front</span>
+              <span class="upload-state" data-state-for="left_front">Optional</span>
+              <input class="sr-only" type="file" name="left_front" accept="image/jpeg,image/png,image/webp" />
+            </label>
+
+            <label class="upload-tile">
+              <span class="upload-label">right_front</span>
+              <span class="upload-state" data-state-for="right_front">Optional</span>
+              <input class="sr-only" type="file" name="right_front" accept="image/jpeg,image/png,image/webp" />
+            </label>
+
+            <label class="upload-tile">
+              <span class="upload-label">left</span>
+              <span class="upload-state" data-state-for="left">Optional</span>
+              <input class="sr-only" type="file" name="left" accept="image/jpeg,image/png,image/webp" />
+            </label>
+
+            <label class="upload-tile">
+              <span class="upload-label">right</span>
+              <span class="upload-state" data-state-for="right">Optional</span>
+              <input class="sr-only" type="file" name="right" accept="image/jpeg,image/png,image/webp" />
+            </label>
+
+            <label class="upload-tile md:col-span-2">
+              <span class="upload-label">back</span>
+              <span class="upload-state" data-state-for="back">Optional</span>
+              <input class="sr-only" type="file" name="back" accept="image/jpeg,image/png,image/webp" />
+            </label>
+          </div>
+
+          <div class="flex flex-col gap-3 border-t border-zinc-800 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p id="formHint" class="text-sm text-zinc-400">0 images selected</p>
+            <button
+              id="submitButton"
+              type="submit"
+              class="inline-flex h-11 items-center justify-center rounded bg-cyan-400 px-5 text-sm font-semibold text-zinc-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+            >
+              Create project
+            </button>
+          </div>
+        </form>
+
+        <aside class="border border-zinc-800 bg-zinc-900/40 p-4">
+          <div class="mb-4 flex items-center justify-between">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-zinc-300">Projects</h2>
+            <button id="refreshProjects" type="button" class="text-sm text-cyan-300 hover:text-cyan-200">Refresh</button>
+          </div>
+
+          <ul id="projectsList" class="space-y-2 text-sm text-zinc-400"></ul>
+
+          <div class="mt-5">
+            <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-300">Status</h2>
+            <div id="statusPanel" class="min-h-28 rounded border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-400">
+              Waiting for upload.
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="/js/app.js"></script>
+  </body>
+</html>
