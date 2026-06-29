@@ -1,0 +1,13 @@
+Pitch,Rise_Run,Degrees,Category
+1/12,1" rise per 12" run,4.76,Flat roof / Very low slope
+2/12,2" rise per 12" run,9.46,Flat roof / Very low slope
+3/12,3" rise per 12" run,14.04,Low slope
+4/12,4" rise per 12" run,18.43,Standard residential slope
+5/12,5" rise per 12" run,22.62,Standard residential slope
+6/12,6" rise per 12" run,26.57,Standard residential slope
+7/12,7" rise per 12" run,30.26,Moderate / High slope
+8/12,8" rise per 12" run,33.69,Steep roof
+9/12,9" rise per 12" run,36.87,Steep roof
+10/12,10" rise per 12" run,39.81,Very steep roof
+11/12,11" rise per 12" run,42.51,Very steep roof
+12/12,12" rise per 12" run,45.00,Perfect 45-degree angle

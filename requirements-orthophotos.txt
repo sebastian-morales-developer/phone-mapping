@@ -1,0 +1,9 @@
+websocket-client>=1.8,<2
+openai>=2.44,<3
+pillow>=12,<13
+python-dotenv>=1.2,<2
+numpy>=2.0,<3
+trimesh>=4.5,<5
+
+# External system dependency:
+# - Google Chrome or Microsoft Edge installed locally for headless rendering.

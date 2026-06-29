@@ -7,6 +7,7 @@ const loadingPanel = document.querySelector('#loadingPanel');
 const title = document.querySelector('#viewerTitle');
 const subtitle = document.querySelector('#viewerSubtitle');
 const downloadLink = document.querySelector('#downloadLink');
+const orthophotosLink = document.querySelector('#orthophotosLink');
 
 const params = new URLSearchParams(window.location.search);
 const modelUrl = params.get('model');
@@ -14,6 +15,30 @@ const projectName = params.get('project') || 'Project';
 
 title.textContent = projectName;
 downloadLink.href = modelUrl || '#';
+
+function setOrthophotosLink(hasOrthophotos) {
+  if (!orthophotosLink) return;
+  const query = new URLSearchParams({ project: projectName });
+  if (!hasOrthophotos) query.set('start', '1');
+  orthophotosLink.textContent = hasOrthophotos ? 'Watch Orthophotos' : 'Create Orthophotos';
+  orthophotosLink.href = `/orthophotos.html?${query.toString()}`;
+}
+
+async function refreshOrthophotoAction() {
+  if (!orthophotosLink || !projectName || projectName === 'Project') {
+    return;
+  }
+
+  setOrthophotosLink(false);
+  try {
+    const response = await fetch(`/api/projects/${encodeURIComponent(projectName)}/orthophotos`);
+    if (!response.ok) return;
+    const data = await response.json();
+    setOrthophotosLink(Boolean(data.exists));
+  } catch (error) {
+    console.warn('Could not check orthophotos.', error);
+  }
+}
 
 if (!modelUrl) {
   loadingPanel.textContent = 'No GLB model URL was provided.';
@@ -97,6 +122,7 @@ function animate() {
 window.addEventListener('resize', resize);
 resize();
 animate();
+refreshOrthophotoAction();
 
 const loader = new GLTFLoader();
 loader.load(

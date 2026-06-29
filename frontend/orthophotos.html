@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phone Mapping V1 Orthophotos</title>
+    <link rel="stylesheet" href="/css/orthophotos.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="page-header">
+        <div class="header-actions">
+          <a href="/">Back</a>
+          <a id="viewerLink" href="/">View 3D</a>
+        </div>
+
+        <div class="logo-strip" aria-label="Artemis Phone Mapping">
+          <img class="logo logo-artemis" src="/logos/artemis_logo.png" alt="Artemis" />
+          <img class="logo logo-phone-mapping" src="/logos/artemis_phone_mapping_logo.png" alt="Artemis Phone Mapping" />
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="intro">
+          <div>
+            <p class="eyebrow">Orthographic faces</p>
+            <h1 id="pageTitle">Orthophotos</h1>
+          </div>
+          <div class="intro-actions">
+            <button id="createButton" type="button">Create Orthophotos</button>
+            <button id="humanScaleButton" type="button">Create Human Scale</button>
+            <button id="deleteHumanScaleButton" class="is-hidden" type="button">Delete Human Scale</button>
+            <button id="topAreaButton" type="button">Calculate Top Area</button>
+          </div>
+        </section>
+
+        <section id="topAreaCard" class="measurement-card is-hidden">
+          <div class="section-heading">
+            <h2>Top Visible Area</h2>
+            <span>model units²</span>
+          </div>
+          <div class="measurement-grid">
+            <div>
+              <strong id="topAreaValue">-</strong>
+              <span>3D visible area</span>
+            </div>
+            <div>
+              <strong id="topProjectedAreaValue">-</strong>
+              <span>2D projected area</span>
+            </div>
+            <div>
+              <strong id="topVisibleFacesValue">-</strong>
+              <span>visible faces</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="topAreaMetersCard" class="measurement-card is-hidden">
+          <div class="section-heading">
+            <h2>Top Visible Area</h2>
+            <span>meters² estimate</span>
+          </div>
+          <div class="measurement-grid">
+            <div>
+              <strong id="topAreaMetersValue">-</strong>
+              <span>3D visible area m²</span>
+            </div>
+            <div>
+              <strong id="topProjectedAreaMetersValue">-</strong>
+              <span>2D projected area m²</span>
+            </div>
+            <div>
+              <strong id="areaScaleValue">-</strong>
+              <span>m² per model unit²</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="glbDimensionsCard" class="measurement-card is-hidden">
+          <div class="section-heading">
+            <h2>GLB Model Dimensions</h2>
+            <span>model units</span>
+          </div>
+          <div class="measurement-grid">
+            <div>
+              <strong id="glbWidthValue">-</strong>
+              <span>front width</span>
+            </div>
+            <div>
+              <strong id="glbLengthValue">-</strong>
+              <span>right/left length</span>
+            </div>
+            <div>
+              <strong id="glbHeightValue">-</strong>
+              <span>model height</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="buildingDimensionsCard" class="measurement-card is-hidden">
+          <div class="section-heading">
+            <h2>Estimated Building Dimensions</h2>
+            <span>human scale</span>
+          </div>
+          <div class="measurement-grid">
+            <div>
+              <strong id="frontWidthMetersValue">-</strong>
+              <span>front width meters</span>
+            </div>
+            <div>
+              <strong id="buildingLengthMetersValue">-</strong>
+              <span>building length meters</span>
+            </div>
+            <div>
+              <strong id="pixelsPerMeterValue">-</strong>
+              <span>pixels per meter</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="status-card">
+          <div class="section-heading">
+            <h2>Status Logs</h2>
+            <button id="refreshButton" type="button">Refresh</button>
+          </div>
+          <pre id="statusLog">Loading orthophoto status...</pre>
+        </section>
+
+        <section>
+          <div class="section-heading">
+            <h2>Orthophotos</h2>
+            <span id="photoCount">0 / 6</span>
+          </div>
+          <div id="photoGrid" class="photo-grid"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/js/orthophotos.js"></script>
+  </body>
+</html>

@@ -16,7 +16,11 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const FRONTEND_DIR = path.join(ROOT_DIR, 'frontend');
 const PROJECTS_DIR = path.join(ROOT_DIR, 'projects');
 const PYTHON_SERVICE = path.join(ROOT_DIR, 'python_services', 'run_pipeline.py');
+const ORTHOPHOTO_SERVICE = path.join(ROOT_DIR, 'python_services', 'create_orthophotos.py');
+const HUMAN_SCALE_SERVICE = path.join(ROOT_DIR, 'python_services', 'create_human_scale.py');
+const TOP_AREA_SERVICE = path.join(ROOT_DIR, 'python_services', 'calculate_top_area.py');
 const DEFAULT_PYTHON_BIN = '/home/usuario/projects/phone_mapping_v1/.venv/bin/python';
+const DEFAULT_ORTHOPHOTO_PYTHON_BIN = path.join(ROOT_DIR, '.venv', 'bin', 'python');
 
 const VIEW_FIELDS = ['front', 'left', 'right', 'back', 'left_front', 'right_front'];
 const REQUIRED_FIELDS = new Set(['front']);
@@ -26,6 +30,9 @@ const IMAGE_MIME_TO_EXT = {
   'image/webp': '.webp',
 };
 const jobs = new Map();
+const orthophotoJobs = new Map();
+const humanScaleJobs = new Map();
+const topAreaJobs = new Map();
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -91,6 +98,7 @@ async function createProjectFolders(projectDir) {
     outputPhotos: path.join(projectDir, 'output_photos'),
     edited: path.join(projectDir, 'output_photos', 'edited'),
     comparison: path.join(projectDir, 'output_photos', 'comparison'),
+    orthophotos: path.join(projectDir, 'output_photos', 'orthophotos'),
     outputGlb: path.join(projectDir, 'output_glb'),
     logs: path.join(projectDir, 'logs'),
   };
@@ -146,6 +154,12 @@ function pythonBin() {
   if (process.env.PYTHON_BIN) return process.env.PYTHON_BIN;
   if (fsSync.existsSync(DEFAULT_PYTHON_BIN)) return DEFAULT_PYTHON_BIN;
   return 'python3';
+}
+
+function orthophotoPythonBin() {
+  if (process.env.ORTHOPHOTO_PYTHON_BIN) return process.env.ORTHOPHOTO_PYTHON_BIN;
+  if (fsSync.existsSync(DEFAULT_ORTHOPHOTO_PYTHON_BIN)) return DEFAULT_ORTHOPHOTO_PYTHON_BIN;
+  return pythonBin();
 }
 
 function appendJobLog(job, chunk) {
@@ -250,6 +264,364 @@ function publicJob(job) {
   };
 }
 
+function validProjectName(projectName) {
+  return /^project_\d+$/.test(projectName);
+}
+
+function orthophotoDirForProject(projectName) {
+  return path.join(PROJECTS_DIR, projectName, 'output_photos', 'orthophotos');
+}
+
+function measurementsDirForProject(projectName) {
+  return path.join(PROJECTS_DIR, projectName, 'measurements');
+}
+
+function topAreaPathForProject(projectName) {
+  return path.join(measurementsDirForProject(projectName), 'top_visible_area.json');
+}
+
+async function orthophotoFilesForProject(projectName) {
+  const outputDir = orthophotoDirForProject(projectName);
+  try {
+    const entries = await fs.readdir(outputDir, { withFileTypes: true });
+    return entries
+      .filter((entry) => {
+        const name = entry.name.toLowerCase();
+        return entry.isFile() && name.endsWith('.png') && !name.includes('human_scale');
+      })
+      .map((entry) => ({
+        fileName: entry.name,
+        url: `/api/projects/${encodeURIComponent(projectName)}/orthophotos/files/${encodeURIComponent(entry.name)}`,
+      }))
+      .sort((a, b) => a.fileName.localeCompare(b.fileName));
+  } catch (error) {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  }
+}
+
+async function humanScaleFileForProject(projectName) {
+  const outputDir = orthophotoDirForProject(projectName);
+  try {
+    const entries = await fs.readdir(outputDir, { withFileTypes: true });
+    const file = entries
+      .filter((entry) => entry.isFile() && entry.name.toLowerCase() === 'human_scale_front.png')
+      .map((entry) => ({
+        fileName: entry.name,
+        url: `/api/projects/${encodeURIComponent(projectName)}/orthophotos/files/${encodeURIComponent(entry.name)}`,
+      }))[0];
+    return file || null;
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
+async function humanScaleMetadataForProject(projectName) {
+  const metadataPath = path.join(orthophotoDirForProject(projectName), 'human_scale_front_metadata.json');
+  try {
+    return JSON.parse(await fs.readFile(metadataPath, 'utf8'));
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
+async function glbModelDimensionsForProject(projectName) {
+  const dimensionsPath = path.join(orthophotoDirForProject(projectName), 'glb_model_dimensions.json');
+  try {
+    return JSON.parse(await fs.readFile(dimensionsPath, 'utf8'));
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
+async function deleteHumanScaleForProject(projectName) {
+  const outputDir = orthophotoDirForProject(projectName);
+  const outputPath = path.join(outputDir, 'human_scale_front.png');
+  const workingInputPath = path.join(outputDir, '.human_scale_front_input.png');
+  const metadataPath = path.join(outputDir, 'human_scale_front_metadata.json');
+  await fs.rm(outputPath, { force: true });
+  await fs.rm(workingInputPath, { force: true });
+  await fs.rm(metadataPath, { force: true });
+}
+
+async function firstGlbPathForProject(projectName) {
+  const outputGlbDir = path.join(PROJECTS_DIR, projectName, 'output_glb');
+  const entries = await fs.readdir(outputGlbDir, { withFileTypes: true });
+  const glbEntry = entries
+    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.glb'))
+    .sort((a, b) => a.name.localeCompare(b.name))[0];
+
+  if (!glbEntry) {
+    throw new Error(`No GLB file found for ${projectName}.`);
+  }
+  return path.join(outputGlbDir, glbEntry.name);
+}
+
+async function publicOrthophotoState(projectName) {
+  const job = orthophotoJobs.get(projectName);
+  const files = await orthophotoFilesForProject(projectName);
+  const humanScaleJob = humanScaleJobs.get(projectName);
+  const humanScaleFile = await humanScaleFileForProject(projectName);
+  const humanScaleMetadata = await humanScaleMetadataForProject(projectName);
+  const glbModelDimensions = await glbModelDimensionsForProject(projectName);
+  const topAreaJob = topAreaJobs.get(projectName);
+  let topArea = null;
+  try {
+    topArea = JSON.parse(await fs.readFile(topAreaPathForProject(projectName), 'utf8'));
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  return {
+    projectName,
+    exists: files.length > 0,
+    expectedCount: 5,
+    files,
+    humanScale: {
+      exists: Boolean(humanScaleFile),
+      file: humanScaleFile,
+      metadata: humanScaleMetadata,
+      job: humanScaleJob ? publicJob(humanScaleJob) : null,
+    },
+    glbModelDimensions: {
+      exists: Boolean(glbModelDimensions),
+      result: glbModelDimensions,
+    },
+    topArea: {
+      exists: Boolean(topArea),
+      result: topArea,
+      job: topAreaJob ? publicJob(topAreaJob) : null,
+    },
+    job: job ? publicJob(job) : null,
+  };
+}
+
+function startOrthophotoPipeline(projectName, projectDir, modelPath) {
+  const logsDir = path.join(projectDir, 'logs');
+  const outputDir = orthophotoDirForProject(projectName);
+  fsSync.mkdirSync(logsDir, { recursive: true });
+  fsSync.mkdirSync(outputDir, { recursive: true });
+
+  const startedAt = new Date().toISOString();
+  const safeTimestamp = startedAt.replace(/[:.]/g, '-');
+  const logPath = path.join(logsDir, `orthophotos_${safeTimestamp}.log`);
+  const bin = orthophotoPythonBin();
+  const args = [
+    ORTHOPHOTO_SERVICE,
+    '--model',
+    modelPath,
+    '--output-dir',
+    outputDir,
+  ];
+
+  const job = {
+    projectName,
+    projectDir,
+    status: 'running',
+    startedAt,
+    finishedAt: null,
+    exitCode: null,
+    logPath,
+    logs: [],
+    command: `${bin} ${args.join(' ')}`,
+  };
+  orthophotoJobs.set(projectName, job);
+
+  console.log(`[${projectName}] Starting orthophotos: ${job.command}`);
+  fsSync.writeFileSync(logPath, `Command: ${job.command}\nStarted: ${startedAt}\n\n`);
+
+  const child = spawn(bin, args, {
+    cwd: ROOT_DIR,
+    env: {
+      ...process.env,
+      PYTHONUNBUFFERED: '1',
+    },
+  });
+
+  job.pid = child.pid;
+  updateManifest(projectDir, {
+    orthophotoStatus: 'running',
+    orthophotoStartedAt: startedAt,
+    orthophotoLogPath: logPath,
+    orthophotoCommand: job.command,
+    orthophotoOutputDir: outputDir,
+  }).catch((error) => console.error(error));
+
+  child.stdout.on('data', (chunk) => appendJobLog(job, chunk));
+  child.stderr.on('data', (chunk) => appendJobLog(job, chunk));
+  child.on('error', (error) => {
+    job.status = 'failed';
+    job.finishedAt = new Date().toISOString();
+    job.error = error.message;
+    appendJobLog(job, `Orthophoto process error: ${error.message}\n`);
+  });
+  child.on('close', (code) => {
+    job.exitCode = code;
+    job.finishedAt = new Date().toISOString();
+    job.status = code === 0 ? 'completed' : 'failed';
+    appendJobLog(job, `Orthophoto pipeline finished with exit code ${code}\n`);
+    updateManifest(projectDir, {
+      orthophotoStatus: job.status,
+      orthophotoFinishedAt: job.finishedAt,
+      orthophotoExitCode: code,
+      orthophotoOutputDir: outputDir,
+    }).catch((error) => console.error(error));
+  });
+
+  return job;
+}
+
+function startHumanScalePipeline(projectName, projectDir) {
+  const logsDir = path.join(projectDir, 'logs');
+  const outputDir = orthophotoDirForProject(projectName);
+  fsSync.mkdirSync(logsDir, { recursive: true });
+  fsSync.mkdirSync(outputDir, { recursive: true });
+
+  const startedAt = new Date().toISOString();
+  const safeTimestamp = startedAt.replace(/[:.]/g, '-');
+  const logPath = path.join(logsDir, `human_scale_${safeTimestamp}.log`);
+  const bin = orthophotoPythonBin();
+  const args = [
+    HUMAN_SCALE_SERVICE,
+    '--orthophotos-dir',
+    outputDir,
+  ];
+
+  const job = {
+    projectName,
+    projectDir,
+    status: 'running',
+    startedAt,
+    finishedAt: null,
+    exitCode: null,
+    logPath,
+    logs: [],
+    command: `${bin} ${args.join(' ')}`,
+  };
+  humanScaleJobs.set(projectName, job);
+
+  console.log(`[${projectName}] Starting human scale: ${job.command}`);
+  fsSync.writeFileSync(logPath, `Command: ${job.command}\nStarted: ${startedAt}\n\n`);
+
+  const child = spawn(bin, args, {
+    cwd: ROOT_DIR,
+    env: {
+      ...process.env,
+      PYTHONUNBUFFERED: '1',
+    },
+  });
+
+  job.pid = child.pid;
+  updateManifest(projectDir, {
+    humanScaleStatus: 'running',
+    humanScaleStartedAt: startedAt,
+    humanScaleLogPath: logPath,
+    humanScaleCommand: job.command,
+    humanScaleOutputDir: outputDir,
+  }).catch((error) => console.error(error));
+
+  child.stdout.on('data', (chunk) => appendJobLog(job, chunk));
+  child.stderr.on('data', (chunk) => appendJobLog(job, chunk));
+  child.on('error', (error) => {
+    job.status = 'failed';
+    job.finishedAt = new Date().toISOString();
+    job.error = error.message;
+    appendJobLog(job, `Human scale process error: ${error.message}\n`);
+  });
+  child.on('close', (code) => {
+    job.exitCode = code;
+    job.finishedAt = new Date().toISOString();
+    job.status = code === 0 ? 'completed' : 'failed';
+    appendJobLog(job, `Human scale pipeline finished with exit code ${code}\n`);
+    updateManifest(projectDir, {
+      humanScaleStatus: job.status,
+      humanScaleFinishedAt: job.finishedAt,
+      humanScaleExitCode: code,
+      humanScaleOutputDir: outputDir,
+    }).catch((error) => console.error(error));
+  });
+
+  return job;
+}
+
+function startTopAreaPipeline(projectName, projectDir, modelPath) {
+  const logsDir = path.join(projectDir, 'logs');
+  const outputDir = measurementsDirForProject(projectName);
+  const outputPath = topAreaPathForProject(projectName);
+  fsSync.mkdirSync(logsDir, { recursive: true });
+  fsSync.mkdirSync(outputDir, { recursive: true });
+
+  const startedAt = new Date().toISOString();
+  const safeTimestamp = startedAt.replace(/[:.]/g, '-');
+  const logPath = path.join(logsDir, `top_area_${safeTimestamp}.log`);
+  const bin = orthophotoPythonBin();
+  const args = [
+    TOP_AREA_SERVICE,
+    '--model',
+    modelPath,
+    '--output',
+    outputPath,
+  ];
+
+  const job = {
+    projectName,
+    projectDir,
+    status: 'running',
+    startedAt,
+    finishedAt: null,
+    exitCode: null,
+    logPath,
+    logs: [],
+    command: `${bin} ${args.join(' ')}`,
+  };
+  topAreaJobs.set(projectName, job);
+
+  console.log(`[${projectName}] Starting top area estimation: ${job.command}`);
+  fsSync.writeFileSync(logPath, `Command: ${job.command}\nStarted: ${startedAt}\n\n`);
+
+  const child = spawn(bin, args, {
+    cwd: ROOT_DIR,
+    env: {
+      ...process.env,
+      PYTHONUNBUFFERED: '1',
+    },
+  });
+
+  job.pid = child.pid;
+  updateManifest(projectDir, {
+    topAreaStatus: 'running',
+    topAreaStartedAt: startedAt,
+    topAreaLogPath: logPath,
+    topAreaCommand: job.command,
+    topAreaOutputPath: outputPath,
+  }).catch((error) => console.error(error));
+
+  child.stdout.on('data', (chunk) => appendJobLog(job, chunk));
+  child.stderr.on('data', (chunk) => appendJobLog(job, chunk));
+  child.on('error', (error) => {
+    job.status = 'failed';
+    job.finishedAt = new Date().toISOString();
+    job.error = error.message;
+    appendJobLog(job, `Top area process error: ${error.message}\n`);
+  });
+  child.on('close', (code) => {
+    job.exitCode = code;
+    job.finishedAt = new Date().toISOString();
+    job.status = code === 0 ? 'completed' : 'failed';
+    appendJobLog(job, `Top area pipeline finished with exit code ${code}\n`);
+    updateManifest(projectDir, {
+      topAreaStatus: job.status,
+      topAreaFinishedAt: job.finishedAt,
+      topAreaExitCode: code,
+      topAreaOutputPath: outputPath,
+    }).catch((error) => console.error(error));
+  });
+
+  return job;
+}
+
 async function glbFilesForProject(projectName) {
   const outputGlbDir = path.join(PROJECTS_DIR, projectName, 'output_glb');
   try {
@@ -346,6 +718,183 @@ app.get('/api/projects/:projectName/status', async (req, res, next) => {
       pid: null,
       logs,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/projects/:projectName/orthophotos', async (req, res, next) => {
+  try {
+    const { projectName } = req.params;
+    if (!validProjectName(projectName)) {
+      res.status(400).json({ error: 'Invalid project name.' });
+      return;
+    }
+
+    res.json(await publicOrthophotoState(projectName));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/projects/:projectName/orthophotos', async (req, res, next) => {
+  try {
+    const { projectName } = req.params;
+    if (!validProjectName(projectName)) {
+      res.status(400).json({ error: 'Invalid project name.' });
+      return;
+    }
+
+    const projectDir = path.join(PROJECTS_DIR, projectName);
+    await fs.access(projectDir);
+
+    const liveJob = orthophotoJobs.get(projectName);
+    if (liveJob && liveJob.status === 'running') {
+      res.json(await publicOrthophotoState(projectName));
+      return;
+    }
+
+    const modelPath = await firstGlbPathForProject(projectName);
+    startOrthophotoPipeline(projectName, projectDir, modelPath);
+    res.status(202).json(await publicOrthophotoState(projectName));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/projects/:projectName/orthophotos/status', async (req, res, next) => {
+  try {
+    const { projectName } = req.params;
+    if (!validProjectName(projectName)) {
+      res.status(400).json({ error: 'Invalid project name.' });
+      return;
+    }
+
+    res.json(await publicOrthophotoState(projectName));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/projects/:projectName/orthophotos/human-scale', async (req, res, next) => {
+  try {
+    const { projectName } = req.params;
+    if (!validProjectName(projectName)) {
+      res.status(400).json({ error: 'Invalid project name.' });
+      return;
+    }
+
+    res.json(await publicOrthophotoState(projectName));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/projects/:projectName/orthophotos/human-scale', async (req, res, next) => {
+  try {
+    const { projectName } = req.params;
+    if (!validProjectName(projectName)) {
+      res.status(400).json({ error: 'Invalid project name.' });
+      return;
+    }
+
+    const projectDir = path.join(PROJECTS_DIR, projectName);
+    await fs.access(projectDir);
+
+    const currentState = await publicOrthophotoState(projectName);
+    if (!currentState.exists) {
+      res.status(400).json({ error: 'Create orthophotos before creating human scale.' });
+      return;
+    }
+    if (currentState.humanScale.exists) {
+      res.json(currentState);
+      return;
+    }
+
+    const liveJob = humanScaleJobs.get(projectName);
+    if (liveJob && liveJob.status === 'running') {
+      res.json(await publicOrthophotoState(projectName));
+      return;
+    }
+
+    startHumanScalePipeline(projectName, projectDir);
+    res.status(202).json(await publicOrthophotoState(projectName));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete('/api/projects/:projectName/orthophotos/human-scale', async (req, res, next) => {
+  try {
+    const { projectName } = req.params;
+    if (!validProjectName(projectName)) {
+      res.status(400).json({ error: 'Invalid project name.' });
+      return;
+    }
+
+    const projectDir = path.join(PROJECTS_DIR, projectName);
+    await fs.access(projectDir);
+
+    const liveJob = humanScaleJobs.get(projectName);
+    if (liveJob && liveJob.status === 'running') {
+      res.status(409).json({ error: 'Human scale generation is still running.' });
+      return;
+    }
+
+    await deleteHumanScaleForProject(projectName);
+    humanScaleJobs.delete(projectName);
+    await updateManifest(projectDir, {
+      humanScaleStatus: 'deleted',
+      humanScaleDeletedAt: new Date().toISOString(),
+      humanScaleOutputDir: orthophotoDirForProject(projectName),
+    });
+
+    res.json(await publicOrthophotoState(projectName));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/projects/:projectName/orthophotos/top-area', async (req, res, next) => {
+  try {
+    const { projectName } = req.params;
+    if (!validProjectName(projectName)) {
+      res.status(400).json({ error: 'Invalid project name.' });
+      return;
+    }
+
+    const projectDir = path.join(PROJECTS_DIR, projectName);
+    await fs.access(projectDir);
+
+    const liveJob = topAreaJobs.get(projectName);
+    if (liveJob && liveJob.status === 'running') {
+      res.json(await publicOrthophotoState(projectName));
+      return;
+    }
+
+    const modelPath = await firstGlbPathForProject(projectName);
+    startTopAreaPipeline(projectName, projectDir, modelPath);
+    res.status(202).json(await publicOrthophotoState(projectName));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/projects/:projectName/orthophotos/files/:fileName', async (req, res, next) => {
+  try {
+    const { projectName, fileName } = req.params;
+    if (
+      !validProjectName(projectName)
+      || path.basename(fileName) !== fileName
+      || !fileName.toLowerCase().endsWith('.png')
+    ) {
+      res.status(400).json({ error: 'Invalid orthophoto request.' });
+      return;
+    }
+
+    const imagePath = path.join(orthophotoDirForProject(projectName), fileName);
+    await fs.access(imagePath);
+    res.sendFile(imagePath);
   } catch (error) {
     next(error);
   }
