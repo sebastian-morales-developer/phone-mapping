@@ -7,10 +7,22 @@ const statusPanel = document.querySelector('#statusPanel');
 const submitButton = document.querySelector('#submitButton');
 
 const imageInputs = Array.from(form.querySelectorAll('input[type="file"]'));
+const providerInputs = Array.from(form.querySelectorAll('input[name="model_provider"]'));
+const providerExtraTiles = Array.from(form.querySelectorAll('[data-provider-only]'));
 let activeProject = null;
 let statusTimer = null;
 let statusFetchFailures = 0;
 const acceptedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const HYPER3D_MAX_IMAGES = 5;
+
+function currentProvider() {
+  return providerInputs.find((input) => input.checked)?.value || 'tencent';
+}
+
+function isInputActive(input) {
+  const providerOnly = input.closest('[data-provider-only]');
+  return !providerOnly || providerOnly.dataset.providerOnly === currentProvider();
+}
 
 function setStatus(message, tone = 'neutral') {
   statusPanel.textContent = message;
@@ -25,7 +37,7 @@ function setStatus(message, tone = 'neutral') {
 }
 
 function selectedFiles() {
-  return imageInputs.filter((input) => input.files && input.files.length > 0);
+  return imageInputs.filter((input) => isInputActive(input) && input.files && input.files.length > 0);
 }
 
 function updateFileState(input) {
@@ -45,7 +57,31 @@ function updateFileState(input) {
 
 function updateFormHint() {
   const count = selectedFiles().length;
+  if (currentProvider() === 'hyper3d') {
+    formHint.textContent = `${count} image${count === 1 ? '' : 's'} selected · Hyper3D max ${HYPER3D_MAX_IMAGES}`;
+    formHint.classList.toggle('text-red-300', count > HYPER3D_MAX_IMAGES);
+    return;
+  }
   formHint.textContent = `${count} image${count === 1 ? '' : 's'} selected`;
+  formHint.classList.remove('text-red-300');
+}
+
+function clearInput(input) {
+  input.value = '';
+  updateFileState(input);
+}
+
+function updateProviderFields() {
+  const provider = currentProvider();
+  for (const tile of providerExtraTiles) {
+    const isVisible = tile.dataset.providerOnly === provider;
+    tile.hidden = !isVisible;
+    if (!isVisible) {
+      const input = tile.querySelector('input[type="file"]');
+      if (input) clearInput(input);
+    }
+  }
+  updateFormHint();
 }
 
 function assignDroppedFile(input, file) {
@@ -96,7 +132,7 @@ async function checkHealth() {
     const response = await fetch('/api/health');
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    const ready = data.hasOpenAiKey && data.has3dAiStudioKey;
+    const ready = data.hasOpenAiKey && (data.has3dAiStudioKey || data.hasHyper3dKey);
     healthBadge.textContent = ready ? 'Service ready' : 'Service missing API key';
     healthBadge.classList.toggle('text-emerald-300', ready);
     healthBadge.classList.toggle('text-amber-300', !ready);
@@ -155,6 +191,7 @@ function renderJob(job) {
   const lines = [
     `Project: ${job.projectName}`,
     `Status: ${job.status}`,
+    job.modelProvider ? `3D provider: ${job.modelProvider}` : null,
     job.pid ? `PID: ${job.pid}` : null,
     job.exitCode !== null ? `Exit code: ${job.exitCode}` : null,
     job.logPath ? `Log: ${job.logPath}` : null,
@@ -216,14 +253,22 @@ async function submitProject(event) {
   }
 
   const formData = new FormData();
+  const provider = currentProvider();
+  const selected = selectedFiles();
+  if (provider === 'hyper3d' && selected.length > HYPER3D_MAX_IMAGES) {
+    setStatus(`Hyper3D accepts a maximum of ${HYPER3D_MAX_IMAGES} images. Remove ${selected.length - HYPER3D_MAX_IMAGES} image${selected.length - HYPER3D_MAX_IMAGES === 1 ? '' : 's'} before creating the project.`, 'error');
+    return;
+  }
+  formData.append('model_provider', provider);
   for (const input of imageInputs) {
+    if (!isInputActive(input)) continue;
     if (input.files && input.files[0]) {
       formData.append(input.name, input.files[0]);
     }
   }
 
   submitButton.disabled = true;
-  setStatus('Uploading images and creating project...');
+  setStatus(`Uploading images and creating project...\n3D provider: ${provider}`);
 
   try {
     const response = await fetch('/api/projects', {
@@ -239,6 +284,7 @@ async function submitProject(event) {
     setStatus(
       [
         `Created: ${data.projectName}`,
+        `3D provider: ${data.modelProvider}`,
         `Images saved: ${data.savedImages.length}`,
         `Next: ${data.nextStep}`,
         'Pipeline started.',
@@ -247,6 +293,7 @@ async function submitProject(event) {
     );
     form.reset();
     imageInputs.forEach(updateFileState);
+    updateProviderFields();
     updateFormHint();
     await loadProjects();
     watchProject(data.projectName);
@@ -264,9 +311,14 @@ imageInputs.forEach((input) => {
   bindDropZone(input);
 });
 
+providerInputs.forEach((input) => {
+  input.addEventListener('change', updateProviderFields);
+});
+
 form.addEventListener('submit', submitProject);
 refreshProjects.addEventListener('click', loadProjects);
 
 checkHealth();
 loadProjects();
+updateProviderFields();
 updateFormHint();

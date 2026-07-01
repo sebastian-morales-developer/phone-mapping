@@ -34,6 +34,27 @@
 
       <section class="grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)]">
         <form id="projectForm" class="space-y-5" enctype="multipart/form-data">
+          <fieldset class="provider-panel">
+            <legend class="provider-title">3D generation model</legend>
+            <div class="provider-options" role="radiogroup" aria-label="3D generation model">
+              <label class="provider-option">
+                <input type="radio" name="model_provider" value="tencent" checked />
+                <span>
+                  <strong>Tencent Hunyuan 3.1</strong>
+                  <small>3D AI Studio multiview workflow</small>
+                </span>
+              </label>
+
+              <label class="provider-option">
+                <input type="radio" name="model_provider" value="hyper3d" />
+                <span>
+                  <strong>Hyper3D Rodin Gen-2.5</strong>
+                  <small>Hyper3D five-image workflow</small>
+                </span>
+              </label>
+            </div>
+          </fieldset>
+
           <div class="grid gap-4 md:grid-cols-2">
             <label class="upload-tile md:col-span-2" data-required="true">
               <span class="upload-label">front</span>
@@ -69,6 +90,18 @@
               <span class="upload-label">back</span>
               <span class="upload-state" data-state-for="back">Optional</span>
               <input class="sr-only" type="file" name="back" accept="image/jpeg,image/png,image/webp" />
+            </label>
+
+            <label class="upload-tile provider-extra" data-provider-only="hyper3d" hidden>
+              <span class="upload-label">back_left</span>
+              <span class="upload-state" data-state-for="back_left">Optional</span>
+              <input class="sr-only" type="file" name="back_left" accept="image/jpeg,image/png,image/webp" />
+            </label>
+
+            <label class="upload-tile provider-extra" data-provider-only="hyper3d" hidden>
+              <span class="upload-label">back_right</span>
+              <span class="upload-state" data-state-for="back_right">Optional</span>
+              <input class="sr-only" type="file" name="back_right" accept="image/jpeg,image/png,image/webp" />
             </label>
           </div>
 

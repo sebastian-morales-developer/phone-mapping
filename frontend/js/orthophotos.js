@@ -15,7 +15,6 @@ const topVisibleFacesValue = document.querySelector('#topVisibleFacesValue');
 const topAreaMetersCard = document.querySelector('#topAreaMetersCard');
 const topAreaMetersValue = document.querySelector('#topAreaMetersValue');
 const topProjectedAreaMetersValue = document.querySelector('#topProjectedAreaMetersValue');
-const areaScaleValue = document.querySelector('#areaScaleValue');
 const glbDimensionsCard = document.querySelector('#glbDimensionsCard');
 const glbWidthValue = document.querySelector('#glbWidthValue');
 const glbLengthValue = document.querySelector('#glbLengthValue');
@@ -23,7 +22,7 @@ const glbHeightValue = document.querySelector('#glbHeightValue');
 const buildingDimensionsCard = document.querySelector('#buildingDimensionsCard');
 const frontWidthMetersValue = document.querySelector('#frontWidthMetersValue');
 const buildingLengthMetersValue = document.querySelector('#buildingLengthMetersValue');
-const pixelsPerMeterValue = document.querySelector('#pixelsPerMeterValue');
+const buildingAreaValue = document.querySelector('#buildingAreaValue');
 
 const params = new URLSearchParams(window.location.search);
 const projectName = params.get('project');
@@ -141,33 +140,19 @@ function renderState(data) {
   topAreaButton.disabled = topAreaRunning;
   topAreaButton.textContent = topAreaRunning ? 'Calculating Top Area...' : topArea.exists ? 'Recalculate Top Area' : 'Calculate Top Area';
 
-  if (topArea.exists && topArea.result) {
-    const result = topArea.result;
-    topAreaCard.classList.remove('is-hidden');
-    topAreaValue.textContent = Number(result.area_units_squared || 0).toFixed(3);
-    topProjectedAreaValue.textContent = Number(result.projected_area_units_squared || 0).toFixed(3);
-    topVisibleFacesValue.textContent = String(result.mesh && result.mesh.visible_faces ? result.mesh.visible_faces : '-');
-  } else {
-    topAreaCard.classList.add('is-hidden');
-  }
-
   const glbDimensions = data.glbModelDimensions || {};
-  if (glbDimensions.exists && glbDimensions.result) {
-    const result = glbDimensions.result;
-    glbDimensionsCard.classList.remove('is-hidden');
-    glbWidthValue.textContent = Number(result.width_units || 0).toFixed(3);
-    glbLengthValue.textContent = Number(result.length_units || 0).toFixed(3);
-    glbHeightValue.textContent = Number(result.height_units || 0).toFixed(3);
-  } else {
-    glbDimensionsCard.classList.add('is-hidden');
-  }
+  topAreaCard.classList.add('is-hidden');
+  glbDimensionsCard.classList.add('is-hidden');
 
   const dimensions = humanScale.metadata && humanScale.metadata.building_dimensions;
   if (humanExists && dimensions) {
+    const frontWidthMeters = Number(dimensions.front_width_m);
+    const buildingLengthMeters = Number(dimensions.building_length_m);
+    const buildingArea = frontWidthMeters * buildingLengthMeters;
     buildingDimensionsCard.classList.remove('is-hidden');
     frontWidthMetersValue.textContent = `${Number(dimensions.front_width_m || 0).toFixed(2)} m`;
     buildingLengthMetersValue.textContent = `${Number(dimensions.building_length_m || 0).toFixed(2)} m`;
-    pixelsPerMeterValue.textContent = Number(dimensions.pixels_per_meter || 0).toFixed(2);
+    buildingAreaValue.textContent = Number.isFinite(buildingArea) ? `${buildingArea.toFixed(2)} m²` : '-';
   } else {
     buildingDimensionsCard.classList.add('is-hidden');
   }
@@ -181,7 +166,6 @@ function renderState(data) {
     topAreaMetersCard.classList.remove('is-hidden');
     topAreaMetersValue.textContent = `${metricTopArea.areaM2.toFixed(2)} m²`;
     topProjectedAreaMetersValue.textContent = `${metricTopArea.projectedAreaM2.toFixed(2)} m²`;
-    areaScaleValue.textContent = metricTopArea.squareMetersPerModelUnit2.toFixed(2);
   } else {
     topAreaMetersCard.classList.add('is-hidden');
   }

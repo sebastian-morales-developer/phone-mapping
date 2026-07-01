@@ -112,6 +112,13 @@ body {
   max-height: 26px;
 }
 
+#viewerMain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 48vw);
+  min-width: 0;
+  min-height: 0;
+}
+
 #canvasWrap {
   position: relative;
   min-width: 0;
@@ -139,6 +146,326 @@ body {
 
 #loadingPanel.is-hidden {
   display: none;
+}
+
+#insightsPanel {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border-left: 1px solid rgb(168 85 247 / 0.28);
+  background:
+    radial-gradient(circle at top right, rgb(126 34 206 / 0.18), transparent 24rem),
+    #08020d;
+  padding: 14px;
+}
+
+.insights-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgb(168 85 247 / 0.26);
+  background: rgb(16 6 28 / 0.78);
+  padding: 12px;
+}
+
+.insights-heading h2 {
+  margin: 0;
+  color: #f8f7ff;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.insights-heading-compact {
+  margin-top: 14px;
+}
+
+.insights-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.viewer-eyebrow {
+  margin: 0 0 5px;
+  color: #c084fc;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#refreshInsightsButton,
+#refreshHumanScaleButton {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(192 132 252 / 0.58);
+  background: rgb(88 28 135 / 0.58);
+  color: #f5d0fe;
+  padding: 0 11px;
+  cursor: pointer;
+}
+
+#refreshInsightsButton:hover,
+#refreshHumanScaleButton:hover {
+  background: rgb(126 34 206 / 0.76);
+}
+
+#refreshInsightsButton:disabled,
+#refreshHumanScaleButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+#insightsStatus {
+  margin-top: 12px;
+  border: 1px solid rgb(168 85 247 / 0.24);
+  background: rgb(4 1 8 / 0.82);
+  color: #ddd6fe;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.viewer-metrics {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.viewer-metric-section {
+  border: 1px solid rgb(168 85 247 / 0.28);
+  background: rgb(21 5 36 / 0.72);
+}
+
+.viewer-metric-section h3 {
+  margin: 0;
+  border-bottom: 1px solid rgb(168 85 247 / 0.22);
+  padding: 10px 12px;
+  color: #f5d0fe;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.viewer-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+}
+
+.viewer-metric {
+  border: 1px solid rgb(168 85 247 / 0.22);
+  background: rgb(4 1 8 / 0.5);
+  padding: 10px;
+}
+
+.viewer-metric strong {
+  display: block;
+  color: #f5d0fe;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.viewer-metric span {
+  display: block;
+  margin-top: 5px;
+  color: #c4b5fd;
+  font-size: 12px;
+}
+
+#viewerPhotoCount {
+  color: #c4b5fd;
+  font-size: 13px;
+}
+
+.viewer-photo-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.viewer-photo-card {
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  border: 1px solid rgb(168 85 247 / 0.28);
+  background: #09090b;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.viewer-photo-card:hover {
+  border-color: rgb(34 211 238 / 0.72);
+}
+
+.viewer-photo-card:disabled {
+  cursor: default;
+}
+
+.viewer-photo-card:disabled:hover {
+  border-color: rgb(168 85 247 / 0.28);
+}
+
+.viewer-photo-card h3 {
+  margin: 0;
+  border-bottom: 1px solid rgb(168 85 247 / 0.22);
+  padding: 8px 10px;
+  color: #f5d0fe;
+  font-size: 13px;
+  text-transform: capitalize;
+}
+
+.viewer-photo-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #111;
+}
+
+.viewer-empty-state {
+  border: 1px solid rgb(168 85 247 / 0.24);
+  background: rgb(4 1 8 / 0.6);
+  color: #ddd6fe;
+  padding: 12px;
+  font-size: 13px;
+}
+
+.scale-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.72);
+  padding: 18px;
+}
+
+.scale-modal.is-hidden {
+  display: none;
+}
+
+.scale-modal-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(1180px, 96vw);
+  max-height: 92vh;
+  border: 1px solid rgb(192 132 252 / 0.5);
+  background: #08020d;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.55);
+}
+
+.scale-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid rgb(168 85 247 / 0.28);
+  padding: 14px;
+}
+
+.scale-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.scale-modal-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 14px;
+  min-height: 0;
+  padding: 14px;
+}
+
+.scale-canvas-wrap {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid rgb(168 85 247 / 0.24);
+  background:
+    linear-gradient(45deg, rgb(255 255 255 / 0.05) 25%, transparent 25%),
+    linear-gradient(-45deg, rgb(255 255 255 / 0.05) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgb(255 255 255 / 0.05) 75%),
+    linear-gradient(-45deg, transparent 75%, rgb(255 255 255 / 0.05) 75%),
+    #050207;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-size: 20px 20px;
+}
+
+#scaleCanvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: auto;
+  cursor: crosshair;
+}
+
+.scale-form {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  border: 1px solid rgb(168 85 247 / 0.24);
+  background: rgb(4 1 8 / 0.7);
+  padding: 14px;
+}
+
+.scale-form p,
+#scalePixelDistance {
+  margin: 0;
+  color: #ddd6fe;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.scale-form label {
+  display: grid;
+  gap: 8px;
+  color: #f5d0fe;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.scale-form input {
+  min-height: 38px;
+  border: 1px solid rgb(192 132 252 / 0.52);
+  background: #050207;
+  color: #ffffff;
+  padding: 0 10px;
+  font: inherit;
+}
+
+.scale-form-actions {
+  display: grid;
+  gap: 8px;
+}
+
+#scaleModalCloseButton,
+#scaleResetButton,
+#scaleSaveButton {
+  min-height: 36px;
+  border: 1px solid rgb(192 132 252 / 0.58);
+  background: rgb(88 28 135 / 0.58);
+  color: #f5d0fe;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+#scaleSaveButton {
+  background: rgb(8 145 178 / 0.72);
+  color: #ecfeff;
+}
+
+#scaleSaveButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 @media (max-width: 760px) {
@@ -182,5 +509,33 @@ body {
     min-height: 30px;
     padding: 0 9px;
     font-size: 11px;
+  }
+
+  #viewerMain {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(420px, 54vh) auto;
+    overflow: auto;
+  }
+
+  #insightsPanel {
+    overflow: visible;
+    border-left: 0;
+    border-top: 1px solid rgb(168 85 247 / 0.28);
+  }
+
+  .viewer-metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .insights-heading {
+    align-items: flex-start;
+  }
+
+  .insights-actions {
+    flex-direction: column;
+  }
+
+  .scale-modal-body {
+    grid-template-columns: 1fr;
   }
 }

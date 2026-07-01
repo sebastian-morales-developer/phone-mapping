@@ -15,15 +15,16 @@ const PORT = process.env.PORT || 3000;
 const ROOT_DIR = path.resolve(__dirname, '..');
 const FRONTEND_DIR = path.join(ROOT_DIR, 'frontend');
 const PROJECTS_DIR = path.join(ROOT_DIR, 'projects');
-const PYTHON_SERVICE = path.join(ROOT_DIR, 'python_services', 'run_pipeline.py');
+const PYTHON_SERVICE = path.join(ROOT_DIR, 'python_services', 'run_extended_pipeline.py');
 const ORTHOPHOTO_SERVICE = path.join(ROOT_DIR, 'python_services', 'create_orthophotos.py');
 const HUMAN_SCALE_SERVICE = path.join(ROOT_DIR, 'python_services', 'create_human_scale.py');
 const TOP_AREA_SERVICE = path.join(ROOT_DIR, 'python_services', 'calculate_top_area.py');
-const DEFAULT_PYTHON_BIN = '/home/usuario/projects/phone_mapping_v1/.venv/bin/python';
+const DEFAULT_PYTHON_BIN = path.join(ROOT_DIR, '.venv', 'bin', 'python');
 const DEFAULT_ORTHOPHOTO_PYTHON_BIN = path.join(ROOT_DIR, '.venv', 'bin', 'python');
 
-const VIEW_FIELDS = ['front', 'left', 'right', 'back', 'left_front', 'right_front'];
+const VIEW_FIELDS = ['front', 'left', 'right', 'back', 'left_front', 'right_front', 'back_left', 'back_right'];
 const REQUIRED_FIELDS = new Set(['front']);
+const MODEL_PROVIDERS = new Set(['tencent', 'hyper3d']);
 const IMAGE_MIME_TO_EXT = {
   'image/jpeg': '.jpeg',
   'image/png': '.png',
@@ -55,7 +56,7 @@ const upload = multer({
 
 app.use(cors());
 app.use(morgan('dev'));
-app.use(express.json());
+app.use(express.json({ limit: '25mb' }));
 app.use('/api', (_req, res, next) => {
   res.set('Cache-Control', 'no-store');
   next();
@@ -185,14 +186,14 @@ async function updateManifest(projectDir, patch) {
   await fs.writeFile(manifestPath, JSON.stringify({ ...manifest, ...patch }, null, 2));
 }
 
-function startPipeline(projectName, projectDir) {
+function startPipeline(projectName, projectDir, modelProvider = 'tencent') {
   const logsDir = path.join(projectDir, 'logs');
   fsSync.mkdirSync(logsDir, { recursive: true });
   const startedAt = new Date().toISOString();
   const safeTimestamp = startedAt.replace(/[:.]/g, '-');
   const logPath = path.join(logsDir, `node_pipeline_${safeTimestamp}.log`);
   const bin = pythonBin();
-  const args = [PYTHON_SERVICE, '--project', projectDir];
+  const args = [PYTHON_SERVICE, '--project', projectDir, '--model-provider', modelProvider];
 
   const job = {
     projectName,
@@ -204,6 +205,7 @@ function startPipeline(projectName, projectDir) {
     logPath,
     logs: [],
     command: `${bin} ${args.join(' ')}`,
+    modelProvider,
   };
   jobs.set(projectName, job);
 
@@ -224,6 +226,7 @@ function startPipeline(projectName, projectDir) {
     pipelineStartedAt: startedAt,
     pipelineLogPath: logPath,
     pipelineCommand: job.command,
+    modelProvider,
   }).catch((error) => console.error(error));
 
   child.stdout.on('data', (chunk) => appendJobLog(job, chunk));
@@ -259,6 +262,7 @@ function publicJob(job) {
     exitCode: job.exitCode,
     logPath: job.logPath,
     command: job.command,
+    modelProvider: job.modelProvider || null,
     pid: job.pid,
     logs: job.logs.slice(-120),
   };
@@ -276,6 +280,10 @@ function measurementsDirForProject(projectName) {
   return path.join(PROJECTS_DIR, projectName, 'measurements');
 }
 
+function comparisonDirForProject(projectName) {
+  return path.join(PROJECTS_DIR, projectName, 'output_photos', 'comparison');
+}
+
 function topAreaPathForProject(projectName) {
   return path.join(measurementsDirForProject(projectName), 'top_visible_area.json');
 }
@@ -287,7 +295,10 @@ async function orthophotoFilesForProject(projectName) {
     return entries
       .filter((entry) => {
         const name = entry.name.toLowerCase();
-        return entry.isFile() && name.endsWith('.png') && !name.includes('human_scale');
+        return entry.isFile()
+          && name.endsWith('.png')
+          && !name.includes('human_scale')
+          && !name.includes('reference_scale');
       })
       .map((entry) => ({
         fileName: entry.name,
@@ -300,12 +311,32 @@ async function orthophotoFilesForProject(projectName) {
   }
 }
 
-async function humanScaleFileForProject(projectName) {
+async function comparisonFilesForProject(projectName) {
+  const outputDir = comparisonDirForProject(projectName);
+  try {
+    const entries = await fs.readdir(outputDir, { withFileTypes: true });
+    return entries
+      .filter((entry) => {
+        const name = entry.name.toLowerCase();
+        return entry.isFile() && /\.(png|jpe?g|webp)$/.test(name);
+      })
+      .map((entry) => ({
+        fileName: entry.name,
+        url: `/api/projects/${encodeURIComponent(projectName)}/comparison/files/${encodeURIComponent(entry.name)}`,
+      }))
+      .sort((a, b) => a.fileName.localeCompare(b.fileName));
+  } catch (error) {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  }
+}
+
+async function referenceScaleFileForProject(projectName) {
   const outputDir = orthophotoDirForProject(projectName);
   try {
     const entries = await fs.readdir(outputDir, { withFileTypes: true });
     const file = entries
-      .filter((entry) => entry.isFile() && entry.name.toLowerCase() === 'human_scale_front.png')
+      .filter((entry) => entry.isFile() && entry.name.toLowerCase() === 'reference_scale.png')
       .map((entry) => ({
         fileName: entry.name,
         url: `/api/projects/${encodeURIComponent(projectName)}/orthophotos/files/${encodeURIComponent(entry.name)}`,
@@ -317,8 +348,8 @@ async function humanScaleFileForProject(projectName) {
   }
 }
 
-async function humanScaleMetadataForProject(projectName) {
-  const metadataPath = path.join(orthophotoDirForProject(projectName), 'human_scale_front_metadata.json');
+async function referenceScaleMetadataForProject(projectName) {
+  const metadataPath = path.join(orthophotoDirForProject(projectName), 'reference_scale_metadata.json');
   try {
     return JSON.parse(await fs.readFile(metadataPath, 'utf8'));
   } catch (error) {
@@ -342,9 +373,110 @@ async function deleteHumanScaleForProject(projectName) {
   const outputPath = path.join(outputDir, 'human_scale_front.png');
   const workingInputPath = path.join(outputDir, '.human_scale_front_input.png');
   const metadataPath = path.join(outputDir, 'human_scale_front_metadata.json');
+  const referenceOutputPath = path.join(outputDir, 'reference_scale.png');
+  const referenceMetadataPath = path.join(outputDir, 'reference_scale_metadata.json');
   await fs.rm(outputPath, { force: true });
   await fs.rm(workingInputPath, { force: true });
   await fs.rm(metadataPath, { force: true });
+  await fs.rm(referenceOutputPath, { force: true });
+  await fs.rm(referenceMetadataPath, { force: true });
+}
+
+function pngSize(buffer) {
+  if (
+    buffer.length < 24
+    || buffer.toString('ascii', 1, 4) !== 'PNG'
+    || buffer.toString('ascii', 12, 16) !== 'IHDR'
+  ) {
+    throw new Error('Expected PNG image data.');
+  }
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20),
+  };
+}
+
+async function orthophotoPngSize(projectName, fileName) {
+  const imagePath = path.join(orthophotoDirForProject(projectName), fileName);
+  const buffer = await fs.readFile(imagePath);
+  return pngSize(buffer);
+}
+
+async function findOrthophotoByFace(projectName, face) {
+  const files = await orthophotoFilesForProject(projectName);
+  return files.find((file) => file.fileName.toLowerCase().endsWith(`_${face}.png`)) || null;
+}
+
+async function saveReferenceScaleForProject(projectName, payload) {
+  const outputDir = orthophotoDirForProject(projectName);
+  await ensureDir(outputDir);
+
+  const sourceFileName = path.basename(String(payload.sourceFileName || ''));
+  if (!sourceFileName || sourceFileName !== payload.sourceFileName || !sourceFileName.toLowerCase().endsWith('.png')) {
+    throw new Error('Invalid reference image file.');
+  }
+
+  const sourcePath = path.join(outputDir, sourceFileName);
+  await fs.access(sourcePath);
+
+  const knownMeters = Number(payload.knownMeters);
+  const pixelDistance = Number(payload.pixelDistance);
+  if (!Number.isFinite(knownMeters) || knownMeters <= 0) {
+    throw new Error('Reference length in meters must be greater than zero.');
+  }
+  if (!Number.isFinite(pixelDistance) || pixelDistance <= 0) {
+    throw new Error('Reference pixel distance must be greater than zero.');
+  }
+
+  const imageDataUrl = String(payload.annotatedImageDataUrl || '');
+  const match = imageDataUrl.match(/^data:image\/png;base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) {
+    throw new Error('Annotated image must be a PNG data URL.');
+  }
+
+  const imageBuffer = Buffer.from(match[1], 'base64');
+  const annotatedSize = pngSize(imageBuffer);
+  const pixelsPerMeter = pixelDistance / knownMeters;
+
+  const frontFile = await findOrthophotoByFace(projectName, 'front');
+  const rightFile = await findOrthophotoByFace(projectName, 'right');
+  const frontSize = frontFile ? await orthophotoPngSize(projectName, frontFile.fileName) : null;
+  const rightSize = rightFile ? await orthophotoPngSize(projectName, rightFile.fileName) : null;
+
+  const buildingDimensions = {
+    method: 'manual_reference_scale',
+    reference_length_m: knownMeters,
+    reference_length_px: pixelDistance,
+    pixels_per_meter: pixelsPerMeter,
+    meters_per_pixel: 1 / pixelsPerMeter,
+    front_image_size_px: frontSize ? [frontSize.width, frontSize.height] : null,
+    right_image_size_px: rightSize ? [rightSize.width, rightSize.height] : null,
+    front_width_m: frontSize ? frontSize.width / pixelsPerMeter : null,
+    building_length_m: rightSize ? rightSize.width / pixelsPerMeter : null,
+  };
+
+  const metadata = {
+    source: 'manual_reference_scale',
+    source_image: sourceFileName,
+    output_image: 'reference_scale.png',
+    known_meters: knownMeters,
+    pixel_distance: pixelDistance,
+    pixels_per_meter: pixelsPerMeter,
+    meters_per_pixel: 1 / pixelsPerMeter,
+    line: payload.line || null,
+    source_image_size_px: payload.imageSize || null,
+    annotated_image_size_px: [annotatedSize.width, annotatedSize.height],
+    building_dimensions: buildingDimensions,
+    created_at: new Date().toISOString(),
+  };
+
+  await fs.writeFile(path.join(outputDir, 'reference_scale.png'), imageBuffer);
+  await fs.writeFile(
+    path.join(outputDir, 'reference_scale_metadata.json'),
+    JSON.stringify(metadata, null, 2),
+  );
+
+  return metadata;
 }
 
 async function firstGlbPathForProject(projectName) {
@@ -363,9 +495,10 @@ async function firstGlbPathForProject(projectName) {
 async function publicOrthophotoState(projectName) {
   const job = orthophotoJobs.get(projectName);
   const files = await orthophotoFilesForProject(projectName);
+  const comparisonFiles = await comparisonFilesForProject(projectName);
   const humanScaleJob = humanScaleJobs.get(projectName);
-  const humanScaleFile = await humanScaleFileForProject(projectName);
-  const humanScaleMetadata = await humanScaleMetadataForProject(projectName);
+  const referenceScaleFile = await referenceScaleFileForProject(projectName);
+  const referenceScaleMetadata = await referenceScaleMetadataForProject(projectName);
   const glbModelDimensions = await glbModelDimensionsForProject(projectName);
   const topAreaJob = topAreaJobs.get(projectName);
   let topArea = null;
@@ -379,10 +512,17 @@ async function publicOrthophotoState(projectName) {
     exists: files.length > 0,
     expectedCount: 5,
     files,
+    comparisonFiles,
+    referenceScale: {
+      exists: Boolean(referenceScaleFile),
+      file: referenceScaleFile,
+      metadata: referenceScaleMetadata,
+      job: humanScaleJob ? publicJob(humanScaleJob) : null,
+    },
     humanScale: {
-      exists: Boolean(humanScaleFile),
-      file: humanScaleFile,
-      metadata: humanScaleMetadata,
+      exists: Boolean(referenceScaleFile),
+      file: referenceScaleFile,
+      metadata: referenceScaleMetadata,
       job: humanScaleJob ? publicJob(humanScaleJob) : null,
     },
     glbModelDimensions: {
@@ -645,6 +785,7 @@ app.get('/api/health', (_req, res) => {
     service: 'phone_mapping_webapp_v1',
     hasOpenAiKey: Boolean(process.env.OPENAI_API_KEY),
     has3dAiStudioKey: Boolean(process.env['3DAISTUDIO_API_KEY']),
+    hasHyper3dKey: Boolean(process.env.HYPER3D_API_KEY),
   });
 });
 
@@ -715,6 +856,7 @@ app.get('/api/projects/:projectName/status', async (req, res, next) => {
       exitCode: manifest.pipelineExitCode ?? null,
       logPath: manifest.pipelineLogPath || null,
       command: manifest.pipelineCommand || null,
+      modelProvider: manifest.modelProvider || null,
       pid: null,
       logs,
     });
@@ -855,6 +997,36 @@ app.delete('/api/projects/:projectName/orthophotos/human-scale', async (req, res
   }
 });
 
+app.post('/api/projects/:projectName/orthophotos/reference-scale', async (req, res, next) => {
+  try {
+    const { projectName } = req.params;
+    if (!validProjectName(projectName)) {
+      res.status(400).json({ error: 'Invalid project name.' });
+      return;
+    }
+
+    const projectDir = path.join(PROJECTS_DIR, projectName);
+    await fs.access(projectDir);
+
+    const currentState = await publicOrthophotoState(projectName);
+    if (!currentState.exists) {
+      res.status(400).json({ error: 'Create orthophotos before saving a reference scale.' });
+      return;
+    }
+
+    await saveReferenceScaleForProject(projectName, req.body || {});
+    await updateManifest(projectDir, {
+      referenceScaleStatus: 'saved',
+      referenceScaleSavedAt: new Date().toISOString(),
+      referenceScaleOutputDir: orthophotoDirForProject(projectName),
+    });
+
+    res.json(await publicOrthophotoState(projectName));
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post('/api/projects/:projectName/orthophotos/top-area', async (req, res, next) => {
   try {
     const { projectName } = req.params;
@@ -900,8 +1072,31 @@ app.get('/api/projects/:projectName/orthophotos/files/:fileName', async (req, re
   }
 });
 
+app.get('/api/projects/:projectName/comparison/files/:fileName', async (req, res, next) => {
+  try {
+    const { projectName, fileName } = req.params;
+    if (
+      !validProjectName(projectName)
+      || path.basename(fileName) !== fileName
+      || !/\.(png|jpe?g|webp)$/i.test(fileName)
+    ) {
+      res.status(400).json({ error: 'Invalid comparison image request.' });
+      return;
+    }
+
+    const imagePath = path.join(comparisonDirForProject(projectName), fileName);
+    await fs.access(imagePath);
+    res.sendFile(imagePath);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post('/api/projects', upload.any(), async (req, res, next) => {
   try {
+    const modelProvider = MODEL_PROVIDERS.has(req.body.model_provider)
+      ? req.body.model_provider
+      : 'tencent';
     const fileMap = filesByField(req.files);
     const missing = validateRequiredUploads(fileMap);
     if (missing.length) {
@@ -922,18 +1117,20 @@ app.post('/api/projects', upload.any(), async (req, res, next) => {
       createdAt: new Date().toISOString(),
       savedImages,
       folders,
+      modelProvider,
       pipelineStatus: 'uploaded',
     };
     const manifestPath = path.join(projectDir, 'project_manifest.json');
     await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
 
-    const job = startPipeline(projectName, projectDir);
+    const job = startPipeline(projectName, projectDir, modelProvider);
 
     res.status(201).json({
       projectName,
       projectDir,
       manifestPath,
       savedImages,
+      modelProvider,
       nextStep: 'python_pipeline_running',
       pipeline: publicJob(job),
     });
