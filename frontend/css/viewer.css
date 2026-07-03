@@ -27,7 +27,7 @@ body {
 #viewerHeader {
   z-index: 2;
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto minmax(150px, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 16px;
   border-bottom: 1px solid #27272a;
@@ -42,6 +42,10 @@ body {
   gap: 12px;
 }
 
+.viewer-header-side > div {
+  min-width: 0;
+}
+
 #viewerTitle {
   margin: 0;
   font-size: 18px;
@@ -49,11 +53,77 @@ body {
   line-height: 1.2;
 }
 
+.viewer-title-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+#viewerProjectName {
+  flex: 0 0 auto;
+}
+
+.viewer-title-separator {
+  color: #a1a1aa;
+}
+
+#viewerProjectTitleInput {
+  flex: 1 1 150px;
+  min-height: 30px;
+  min-width: 140px;
+  width: min(18vw, 300px);
+  border: 1px solid rgb(168 85 247 / 0.38);
+  background: rgb(4 1 8 / 0.68);
+  color: #f8f7ff;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+#viewerProjectTitleInput:focus {
+  border-color: rgb(192 132 252 / 0.82);
+  box-shadow: 0 0 0 3px rgb(168 85 247 / 0.16);
+}
+
+#viewerProjectTitleInput::placeholder {
+  color: #857197;
+  font-style: italic;
+}
+
+#viewerProjectTitleSave {
+  min-height: 30px;
+  border: 1px solid rgb(192 132 252 / 0.5);
+  background: rgb(88 28 135 / 0.42);
+  color: #f5d0fe;
+  padding: 0 9px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#viewerProjectTitleSave:hover {
+  background: rgb(126 34 206 / 0.64);
+}
+
+#viewerProjectTitleSave:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 #viewerSubtitle {
   margin: 4px 0 0;
   color: #a1a1aa;
   font-size: 13px;
   line-height: 1.35;
+}
+
+.viewer-provider-badge {
+  margin: 3px 0 0;
+  color: #c084fc;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.25;
 }
 
 #backLink,
@@ -86,6 +156,7 @@ body {
 }
 
 .viewer-logo-strip {
+  justify-self: start;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -181,7 +252,7 @@ body {
 }
 
 .insights-actions {
-  display: flex;
+  display: none;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
@@ -197,7 +268,8 @@ body {
 }
 
 #refreshInsightsButton,
-#refreshHumanScaleButton {
+#refreshHumanScaleButton,
+#projectCommentsSave {
   display: inline-flex;
   min-height: 32px;
   align-items: center;
@@ -210,14 +282,70 @@ body {
 }
 
 #refreshInsightsButton:hover,
-#refreshHumanScaleButton:hover {
+#refreshHumanScaleButton:hover,
+#projectCommentsSave:hover {
   background: rgb(126 34 206 / 0.76);
 }
 
 #refreshInsightsButton:disabled,
-#refreshHumanScaleButton:disabled {
+#refreshHumanScaleButton:disabled,
+#projectCommentsSave:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.project-comments-card {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  border: 1px solid rgb(168 85 247 / 0.24);
+  background:
+    linear-gradient(135deg, rgb(21 5 36 / 0.78), rgb(4 1 8 / 0.82));
+  padding: 12px;
+}
+
+.project-comments-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.project-comments-heading h2 {
+  margin: 0;
+  color: #f8f7ff;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+#projectCommentsInput {
+  min-height: 110px;
+  width: 100%;
+  resize: vertical;
+  border: 1px solid rgb(192 132 252 / 0.42);
+  background: rgb(4 1 8 / 0.82);
+  color: #f8f7ff;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  outline: none;
+}
+
+#projectCommentsInput:focus {
+  border-color: rgb(192 132 252 / 0.82);
+  box-shadow: 0 0 0 3px rgb(168 85 247 / 0.16);
+}
+
+#projectCommentsInput::placeholder {
+  color: #857197;
+}
+
+.project-comments-status {
+  margin: 0;
+  color: #c4b5fd;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 #insightsStatus {
@@ -485,7 +613,8 @@ body {
   }
 
   #viewerTitle,
-  #viewerSubtitle {
+  #viewerSubtitle,
+  .viewer-provider-badge {
     display: none;
   }
 

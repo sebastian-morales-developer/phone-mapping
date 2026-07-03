@@ -3,10 +3,12 @@ node_modules/
 
 # Environment variables and secrets
 .env
-.env.*
 
 # Generated projects and outputs
 projects/
+batch_projects/
+batch_uploads/
+projects_failed/
 
 # Logs
 *.log

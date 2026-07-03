@@ -310,8 +310,29 @@ def edit_project_photos(
     print(f"Input folder: {folders['input']}", flush=True)
     print(f"Edited output folder: {folders['edited']}", flush=True)
     print(f"Comparison output folder: {folders['comparison']}", flush=True)
+    existing_output_pairs = [
+        (input_path, edited_path, comparison_path)
+        for input_path, edited_path, comparison_path in expected_photo_outputs(
+            input_images,
+            folders,
+            args.image_output_format,
+        )
+        if edited_path.is_file() and comparison_path.is_file()
+    ]
+    pending_output_pairs = [
+        (input_path, edited_path, comparison_path)
+        for input_path, edited_path, comparison_path in expected_photo_outputs(
+            input_images,
+            folders,
+            args.image_output_format,
+        )
+        if not (edited_path.is_file() and comparison_path.is_file())
+    ]
+
     print(f"Images found: {len(input_images)}", flush=True)
-    print(f"Estimated OpenAI edit cost: {estimated_edit_cost(len(input_images))}", flush=True)
+    print(f"Existing edited image pairs: {len(existing_output_pairs)}", flush=True)
+    print(f"Images requiring OpenAI edit: {len(pending_output_pairs)}", flush=True)
+    print(f"Estimated OpenAI edit cost: {estimated_edit_cost(len(pending_output_pairs))}", flush=True)
 
     if not input_images:
         raise RuntimeError(f"No input images found in {folders['input']}")
@@ -355,11 +376,13 @@ def edit_project_photos(
     step_started = time.monotonic()
     failed: list[tuple[Path, str]] = []
 
-    for index, image_path in enumerate(input_images, start=1):
+    for _input_path, edited_path, _comparison_path in existing_output_pairs:
+        edited_paths.append(edited_path)
+        print(f"Reusing existing edited output: {edited_path.name}", flush=True)
+
+    for index, (image_path, edited_path, comparison_path) in enumerate(pending_output_pairs, start=1):
         item_started = time.monotonic()
-        edited_path = folders["edited"] / f"{image_path.stem}_edited.{args.image_output_format}"
-        comparison_path = folders["comparison"] / f"{image_path.stem}_comparison.png"
-        print(f"[{index}/{len(input_images)}] Editing: {image_path.name}", flush=True)
+        print(f"[{index}/{len(pending_output_pairs)}] Editing: {image_path.name}", flush=True)
 
         try:
             process_image(

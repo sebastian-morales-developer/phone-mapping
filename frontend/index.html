@@ -35,13 +35,45 @@
       <section class="grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)]">
         <form id="projectForm" class="space-y-5" enctype="multipart/form-data">
           <fieldset class="provider-panel">
+            <legend class="provider-title">Production mode</legend>
+            <div class="provider-options" role="radiogroup" aria-label="Production mode">
+              <label class="provider-option">
+                <input type="radio" name="production_mode" value="individual" checked />
+                <span>
+                  <strong>Individual Production</strong>
+                  <small>Create one project from manually labeled image slots</small>
+                </span>
+              </label>
+
+              <label class="provider-option">
+                <input type="radio" name="production_mode" value="batch" />
+                <span>
+                  <strong>Batch Production</strong>
+                  <small>Upload a ZIP with one subfolder per project</small>
+                </span>
+              </label>
+
+              <label class="provider-option">
+                <input type="radio" name="production_mode" value="batch_two_models" />
+                <span>
+                  <strong>Batch Production Two Models</strong>
+                  <small>Auto-run Tencent and Hyper3D when each subfolder supports them</small>
+                </span>
+              </label>
+            </div>
+            <p id="providerModeNote" class="provider-note">
+              In Individual Production, this selection controls the project. In Batch Production, each subfolder uses its own phone_mapping_project.json.
+            </p>
+          </fieldset>
+
+          <fieldset id="generationModelPanel" class="provider-panel">
             <legend class="provider-title">3D generation model</legend>
             <div class="provider-options" role="radiogroup" aria-label="3D generation model">
               <label class="provider-option">
                 <input type="radio" name="model_provider" value="tencent" checked />
                 <span>
                   <strong>Tencent Hunyuan 3.1</strong>
-                  <small>3D AI Studio multiview workflow</small>
+                  <small>3D AI Studio multiview workflow (6 angles - 6 images)</small>
                 </span>
               </label>
 
@@ -49,63 +81,111 @@
                 <input type="radio" name="model_provider" value="hyper3d" />
                 <span>
                   <strong>Hyper3D Rodin Gen-2.5</strong>
-                  <small>Hyper3D five-image workflow</small>
+                  <small>Hyper3D five-image workflow (8 angles - 5 images)</small>
                 </span>
               </label>
             </div>
           </fieldset>
 
-          <div class="grid gap-4 md:grid-cols-2">
-            <label class="upload-tile md:col-span-2" data-required="true">
-              <span class="upload-label">front</span>
-              <span class="upload-state" data-state-for="front">Required</span>
-              <input class="sr-only" type="file" name="front" accept="image/jpeg,image/png,image/webp" required />
+          <section id="batchPanel" class="space-y-4" hidden>
+            <label class="upload-tile md:col-span-2" id="batchZipTile">
+              <span class="upload-label">batch ZIP package</span>
+              <span class="upload-state" id="batchZipState">
+                Required. Each subfolder must include phone_mapping_project.json and named images.
+              </span>
+              <input class="sr-only" type="file" name="batch_zip" accept=".zip,application/zip" />
             </label>
+            <div id="batchConfiguredContract" class="batch-contract">
+              <strong>Expected structure</strong>
+              <code>project_folder/front.jpg</code>
+              <code>project_folder/left_front.jpg</code>
+              <code>project_folder/phone_mapping_project.json</code>
+              <span>JSON schema: {"model_provider": "tencent", "projectTitle": "Optional title"} or {"model_provider": "hyper3d", "projectTitle": "Optional title"}</span>
+            </div>
+            <div id="batchTwoModelsContract" class="batch-contract" hidden>
+              <strong>Expected structure for Two Models</strong>
+              <code>project_folder/front.jpg</code>
+              <code>project_folder/left_front.jpg</code>
+              <code>project_folder/back_left.jpg</code>
+              <span>No phone_mapping_project.json is required. The project title is taken from each subfolder name, Tencent uses the best original/inverted orientation, and Hyper3D auto-selects up to 5 views.</span>
+            </div>
+          </section>
 
-            <label class="upload-tile">
-              <span class="upload-label">left_front</span>
-              <span class="upload-state" data-state-for="left_front">Optional</span>
-              <input class="sr-only" type="file" name="left_front" accept="image/jpeg,image/png,image/webp" />
-            </label>
+          <div id="individualPanel" class="photo-map-panel">
+            <div class="photo-map-copy">
+              <span class="photo-map-eyebrow">Photo angle assignment</span>
+              <strong>Drop each image on the view where it was taken.</strong>
+            </div>
 
-            <label class="upload-tile">
-              <span class="upload-label">right_front</span>
-              <span class="upload-state" data-state-for="right_front">Optional</span>
-              <input class="sr-only" type="file" name="right_front" accept="image/jpeg,image/png,image/webp" />
-            </label>
+            <div class="photo-map-shell" aria-label="House photo angle map">
+              <img class="photo-map-house" src="/images/top_view_house_index.png" alt="Top view of house" />
 
-            <label class="upload-tile">
-              <span class="upload-label">left</span>
-              <span class="upload-state" data-state-for="left">Optional</span>
-              <input class="sr-only" type="file" name="left" accept="image/jpeg,image/png,image/webp" />
-            </label>
+              <label class="upload-tile angle-zone angle-front" data-required="true">
+                <span class="upload-label">front photo</span>
+                <span class="upload-state" data-state-for="front">Required</span>
+                <input class="sr-only" type="file" name="front" accept="image/jpeg,image/png,image/webp" required />
+              </label>
 
-            <label class="upload-tile">
-              <span class="upload-label">right</span>
-              <span class="upload-state" data-state-for="right">Optional</span>
-              <input class="sr-only" type="file" name="right" accept="image/jpeg,image/png,image/webp" />
-            </label>
+              <label class="upload-tile angle-zone angle-left-front">
+                <span class="upload-label">left front photo</span>
+                <span class="upload-state" data-state-for="left_front">Optional</span>
+                <input class="sr-only" type="file" name="left_front" accept="image/jpeg,image/png,image/webp" />
+              </label>
 
-            <label class="upload-tile md:col-span-2">
-              <span class="upload-label">back</span>
-              <span class="upload-state" data-state-for="back">Optional</span>
-              <input class="sr-only" type="file" name="back" accept="image/jpeg,image/png,image/webp" />
-            </label>
+              <label class="upload-tile angle-zone angle-right-front">
+                <span class="upload-label">right front photo</span>
+                <span class="upload-state" data-state-for="right_front">Optional</span>
+                <input class="sr-only" type="file" name="right_front" accept="image/jpeg,image/png,image/webp" />
+              </label>
 
-            <label class="upload-tile provider-extra" data-provider-only="hyper3d" hidden>
-              <span class="upload-label">back_left</span>
-              <span class="upload-state" data-state-for="back_left">Optional</span>
-              <input class="sr-only" type="file" name="back_left" accept="image/jpeg,image/png,image/webp" />
-            </label>
+              <label class="upload-tile angle-zone angle-left">
+                <span class="upload-label">left photo</span>
+                <span class="upload-state" data-state-for="left">Optional</span>
+                <input class="sr-only" type="file" name="left" accept="image/jpeg,image/png,image/webp" />
+              </label>
 
-            <label class="upload-tile provider-extra" data-provider-only="hyper3d" hidden>
-              <span class="upload-label">back_right</span>
-              <span class="upload-state" data-state-for="back_right">Optional</span>
-              <input class="sr-only" type="file" name="back_right" accept="image/jpeg,image/png,image/webp" />
-            </label>
+              <label class="upload-tile angle-zone angle-right">
+                <span class="upload-label">right photo</span>
+                <span class="upload-state" data-state-for="right">Optional</span>
+                <input class="sr-only" type="file" name="right" accept="image/jpeg,image/png,image/webp" />
+              </label>
+
+              <label class="upload-tile angle-zone angle-back">
+                <span class="upload-label">back photo</span>
+                <span class="upload-state" data-state-for="back">Optional</span>
+                <input class="sr-only" type="file" name="back" accept="image/jpeg,image/png,image/webp" />
+              </label>
+
+              <label class="upload-tile angle-zone angle-back-left provider-extra" data-provider-only="hyper3d" hidden>
+                <span class="upload-label">left back photo</span>
+                <span class="upload-state" data-state-for="back_left">Optional</span>
+                <input class="sr-only" type="file" name="back_left" accept="image/jpeg,image/png,image/webp" />
+              </label>
+
+              <label class="upload-tile angle-zone angle-back-right provider-extra" data-provider-only="hyper3d" hidden>
+                <span class="upload-label">right back photo</span>
+                <span class="upload-state" data-state-for="back_right">Optional</span>
+                <input class="sr-only" type="file" name="back_right" accept="image/jpeg,image/png,image/webp" />
+              </label>
+            </div>
           </div>
 
-          <div class="flex flex-col gap-3 border-t border-zinc-800 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <label id="projectTitleField" class="project-title-field">
+            <span>
+              <strong>Project title</strong>
+              <small>Optional display name for this project.</small>
+            </span>
+            <input
+              id="projectTitleInput"
+              type="text"
+              name="projectTitle"
+              maxlength="180"
+              placeholder="Example: Weixler (1) - PEND R - RR"
+              autocomplete="off"
+            />
+          </label>
+
+          <div id="projectSubmitRow" class="flex flex-col gap-3 border-t border-zinc-800 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p id="formHint" class="text-sm text-zinc-400">0 images selected</p>
             <button
               id="submitButton"
@@ -117,21 +197,36 @@
           </div>
         </form>
 
-        <aside class="border border-zinc-800 bg-zinc-900/40 p-4">
+        <aside id="projectsPanel" class="projects-panel border border-zinc-800 bg-zinc-900/40 p-4">
           <div class="mb-4 flex items-center justify-between">
             <h2 class="text-sm font-semibold uppercase tracking-wide text-zinc-300">Projects</h2>
-            <button id="refreshProjects" type="button" class="text-sm text-cyan-300 hover:text-cyan-200">Refresh</button>
-          </div>
-
-          <ul id="projectsList" class="space-y-2 text-sm text-zinc-400"></ul>
-
-          <div class="mt-5">
-            <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-300">Status</h2>
-            <div id="statusPanel" class="min-h-28 rounded border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-400">
-              Waiting for upload.
+            <div class="projects-panel-actions">
+              <button id="exportProjectComments" type="button" class="text-sm text-cyan-300 hover:text-cyan-200">Export Comments</button>
+              <button id="refreshProjects" type="button" class="text-sm text-cyan-300 hover:text-cyan-200">Refresh</button>
             </div>
           </div>
+
+          <div class="projects-list-scroll">
+            <ul id="projectsList" class="space-y-2 text-sm text-zinc-400"></ul>
+          </div>
         </aside>
+      </section>
+
+      <section id="pipelineStatusSection" class="pipeline-status-section">
+        <div class="pipeline-status-header">
+          <div>
+            <span class="pipeline-eyebrow">Pipeline status</span>
+            <h2>Processing Timeline</h2>
+          </div>
+          <span id="statusBadge" class="pipeline-status-badge">Waiting</span>
+        </div>
+
+        <div id="statusSummary" class="pipeline-summary-grid"></div>
+
+        <details class="raw-log-details">
+          <summary>Raw terminal logs</summary>
+          <pre id="statusPanel" class="raw-log-panel">Waiting for upload.</pre>
+        </details>
       </section>
     </main>
 

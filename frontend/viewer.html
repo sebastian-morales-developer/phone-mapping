@@ -20,8 +20,20 @@
         <div class="viewer-header-side">
           <a id="backLink" href="/">Back</a>
           <div>
-            <h1 id="viewerTitle">3D Viewer</h1>
+            <div id="viewerTitle" class="viewer-title-row">
+              <span id="viewerProjectName">3D Viewer</span>
+              <span class="viewer-title-separator">:</span>
+              <input
+                id="viewerProjectTitleInput"
+                type="text"
+                maxlength="180"
+                placeholder="Untitled"
+                aria-label="Project title"
+              />
+              <button id="viewerProjectTitleSave" type="button">Save</button>
+            </div>
             <p id="viewerSubtitle">Loading model</p>
+            <p id="viewerModelProvider" class="viewer-provider-badge">Model provider: loading</p>
           </div>
         </div>
 
@@ -35,7 +47,6 @@
         </div>
 
         <div class="viewer-actions">
-          <a id="orthophotosLink" href="#">Create Orthophotos</a>
           <a id="downloadLink" href="#" download>Download GLB</a>
         </div>
       </header>
@@ -57,6 +68,20 @@
               <button id="refreshInsightsButton" type="button">Refresh</button>
             </div>
           </div>
+
+          <section class="project-comments-card" aria-label="Project comments">
+            <div class="project-comments-heading">
+              <h2>Comments</h2>
+              <button id="projectCommentsSave" type="button">Save comments</button>
+            </div>
+            <textarea
+              id="projectCommentsInput"
+              maxlength="5000"
+              placeholder="Add project notes, observations, QA comments, or follow-up details..."
+              aria-label="Project comments"
+            ></textarea>
+            <p id="projectCommentsStatus" class="project-comments-status">No comments saved yet.</p>
+          </section>
 
           <div id="insightsStatus">Loading computed outputs...</div>
           <div id="viewerMetrics" class="viewer-metrics"></div>

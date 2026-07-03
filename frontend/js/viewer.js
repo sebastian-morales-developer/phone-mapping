@@ -4,8 +4,14 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const canvas = document.querySelector('#viewerCanvas');
 const loadingPanel = document.querySelector('#loadingPanel');
-const title = document.querySelector('#viewerTitle');
+const projectNameLabel = document.querySelector('#viewerProjectName');
+const projectTitleInput = document.querySelector('#viewerProjectTitleInput');
+const projectTitleSave = document.querySelector('#viewerProjectTitleSave');
+const projectCommentsInput = document.querySelector('#projectCommentsInput');
+const projectCommentsSave = document.querySelector('#projectCommentsSave');
+const projectCommentsStatus = document.querySelector('#projectCommentsStatus');
 const subtitle = document.querySelector('#viewerSubtitle');
+const viewerModelProvider = document.querySelector('#viewerModelProvider');
 const downloadLink = document.querySelector('#downloadLink');
 const orthophotosLink = document.querySelector('#orthophotosLink');
 const refreshInsightsButton = document.querySelector('#refreshInsightsButton');
@@ -30,7 +36,7 @@ const params = new URLSearchParams(window.location.search);
 const modelUrl = params.get('model');
 const projectName = params.get('project') || 'Project';
 
-title.textContent = projectName;
+if (projectNameLabel) projectNameLabel.textContent = projectName;
 downloadLink.href = modelUrl || '#';
 
 let insightsPollTimer = null;
@@ -54,6 +60,12 @@ function formatNumber(value, decimals = 3) {
   if (value === null || value === undefined) return '-';
   const number = Number(value);
   return Number.isFinite(number) ? number.toFixed(decimals) : '-';
+}
+
+function providerLabel(modelProvider) {
+  if (modelProvider === 'hyper3d') return 'Hyper3D';
+  if (modelProvider === 'tencent') return 'Tencent';
+  return 'Unknown';
 }
 
 function metricCard(label, value) {
@@ -256,11 +268,98 @@ function renderInsights(data) {
 
 async function fetchJson(url, options) {
   const response = await fetch(url, options);
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await response.text();
+    const message = text.match(/<pre>(.*?)<\/pre>/s)?.[1] || text.slice(0, 160) || response.statusText;
+    throw new Error(`HTTP ${response.status} from ${url}: ${message}`);
+  }
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error || `HTTP ${response.status}`);
   }
   return data;
+}
+
+function renderProjectHeader(data) {
+  if (!data) return;
+  if (projectNameLabel) projectNameLabel.textContent = data.projectName || projectName;
+  if (projectTitleInput) {
+    projectTitleInput.value = data.projectTitle || '';
+    projectTitleInput.placeholder = data.projectTitle ? '' : 'Untitled';
+  }
+  if (projectCommentsInput) {
+    projectCommentsInput.value = data.projectComments || '';
+  }
+  if (projectCommentsStatus) {
+    projectCommentsStatus.textContent = data.projectComments ? 'Comments loaded.' : 'No comments saved yet.';
+  }
+  if (viewerModelProvider && Object.prototype.hasOwnProperty.call(data, 'modelProvider')) {
+    viewerModelProvider.textContent = `Model provider: ${providerLabel(data.modelProvider)}`;
+  }
+}
+
+async function loadProjectMetadata() {
+  if (!projectName || projectName === 'Project') return null;
+  const data = await fetchJson(`/api/projects/${encodeURIComponent(projectName)}`);
+  renderProjectHeader(data);
+  return data;
+}
+
+async function saveProjectTitle() {
+  if (!projectTitleInput || !projectTitleSave || !projectName || projectName === 'Project') return;
+  const projectTitle = projectTitleInput.value.trim();
+  projectTitleSave.disabled = true;
+  projectTitleSave.textContent = 'Saving';
+  try {
+    const data = await fetchJson(`/api/projects/${encodeURIComponent(projectName)}/title`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ projectTitle }),
+    });
+    renderProjectHeader(data);
+    projectTitleSave.textContent = 'Saved';
+    setTimeout(() => {
+      projectTitleSave.textContent = 'Save';
+    }, 1200);
+  } catch (error) {
+    projectTitleSave.textContent = 'Error';
+    insightsStatus.textContent = `Could not update project title: ${error.message}`;
+  } finally {
+    projectTitleSave.disabled = false;
+  }
+}
+
+async function saveProjectComments() {
+  if (!projectCommentsInput || !projectCommentsSave || !projectName || projectName === 'Project') return;
+  const projectComments = projectCommentsInput.value;
+  projectCommentsSave.disabled = true;
+  projectCommentsSave.textContent = 'Saving';
+  if (projectCommentsStatus) projectCommentsStatus.textContent = 'Saving comments...';
+  try {
+    const data = await fetchJson(`/api/projects/${encodeURIComponent(projectName)}/comments`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ projectComments }),
+    });
+    renderProjectHeader(data);
+    projectCommentsSave.textContent = 'Saved';
+    if (projectCommentsStatus) {
+      projectCommentsStatus.textContent = data.projectComments ? 'Comments saved.' : 'No comments saved yet.';
+    }
+    setTimeout(() => {
+      projectCommentsSave.textContent = 'Save comments';
+    }, 1200);
+  } catch (error) {
+    projectCommentsSave.textContent = 'Error';
+    if (projectCommentsStatus) projectCommentsStatus.textContent = `Could not save comments: ${error.message}`;
+  } finally {
+    projectCommentsSave.disabled = false;
+  }
 }
 
 async function loadInsights() {
@@ -564,10 +663,40 @@ function animate() {
 window.addEventListener('resize', resize);
 resize();
 animate();
+loadProjectMetadata().catch((error) => {
+  if (projectTitleInput) projectTitleInput.placeholder = 'Untitled';
+  console.warn(error);
+});
 loadInsights().catch(() => {});
 refreshInsightsButton.addEventListener('click', () => {
   loadInsights().catch(() => {});
 });
+
+if (projectTitleSave) {
+  projectTitleSave.addEventListener('click', () => {
+    saveProjectTitle().catch((error) => {
+      insightsStatus.textContent = `Could not update project title: ${error.message}`;
+    });
+  });
+}
+
+if (projectTitleInput) {
+  projectTitleInput.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    saveProjectTitle().catch((error) => {
+      insightsStatus.textContent = `Could not update project title: ${error.message}`;
+    });
+  });
+}
+
+if (projectCommentsSave) {
+  projectCommentsSave.addEventListener('click', () => {
+    saveProjectComments().catch((error) => {
+      if (projectCommentsStatus) projectCommentsStatus.textContent = `Could not save comments: ${error.message}`;
+    });
+  });
+}
 
 if (refreshHumanScaleButton) {
   refreshHumanScaleButton.addEventListener('click', () => {
