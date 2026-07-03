@@ -1,0 +1,91 @@
+{
+  "model": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/output_glb/base_basic_pbr.glb",
+  "browser": "/opt/google/chrome/google-chrome",
+  "projection": "orthographic",
+  "faces": [
+    {
+      "face": "front",
+      "file": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/output_photos/orthophotos/base_basic_pbr_front.png",
+      "status": "verified",
+      "dimension_segments": [],
+      "verification": {
+        "file_size_bytes": 1671622,
+        "width": 1600,
+        "height": 1000,
+        "nontransparent_pixels": 867609,
+        "attempt": 1
+      }
+    },
+    {
+      "face": "back",
+      "file": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/output_photos/orthophotos/base_basic_pbr_back.png",
+      "status": "verified",
+      "dimension_segments": [],
+      "verification": {
+        "file_size_bytes": 1648963,
+        "width": 1600,
+        "height": 1000,
+        "nontransparent_pixels": 867579,
+        "attempt": 1
+      }
+    },
+    {
+      "face": "right",
+      "file": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/output_photos/orthophotos/base_basic_pbr_right.png",
+      "status": "verified",
+      "dimension_segments": [],
+      "verification": {
+        "file_size_bytes": 1704727,
+        "width": 1600,
+        "height": 1000,
+        "nontransparent_pixels": 850316,
+        "attempt": 1
+      }
+    },
+    {
+      "face": "left",
+      "file": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/output_photos/orthophotos/base_basic_pbr_left.png",
+      "status": "verified",
+      "dimension_segments": [],
+      "verification": {
+        "file_size_bytes": 1433214,
+        "width": 1600,
+        "height": 1000,
+        "nontransparent_pixels": 850295,
+        "attempt": 1
+      }
+    },
+    {
+      "face": "top",
+      "file": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/output_photos/orthophotos/base_basic_pbr_top.png",
+      "status": "verified",
+      "dimension_segments": [],
+      "verification": {
+        "file_size_bytes": 1987764,
+        "width": 1600,
+        "height": 1000,
+        "nontransparent_pixels": 837417,
+        "attempt": 1
+      }
+    }
+  ],
+  "verified_faces": 5,
+  "failed_faces": 0,
+  "status": "success",
+  "width": 1600,
+  "height": 1000,
+  "padding": 1.08,
+  "target_width": 10.0,
+  "show_box": false,
+  "dimensions": false,
+  "requested_faces": [
+    "front",
+    "back",
+    "right",
+    "left",
+    "top"
+  ],
+  "min_file_size": 10000,
+  "retries": 2,
+  "retry_wait_step_ms": 20000
+}

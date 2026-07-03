@@ -1,0 +1,67 @@
+{
+  "projectName": "project_16",
+  "createdAt": "2026-07-01T16:38:36.641Z",
+  "source": "batch_upload",
+  "batchId": "batch_20260701162033_26ddcfdd",
+  "batchSourceFolder": "23-hover_190-pinecrest-drive-rochester-ny-job-21033365_-_DONE_R_-_RR",
+  "batchConfigPath": "/home/usuario/projects/phone_mapping_webapp_v1/batch_uploads/batch_20260701162033_26ddcfdd/extracted/batch_upload_1/23-hover_190-pinecrest-drive-rochester-ny-job-21033365_-_DONE_R_-_RR/phone_mapping_project.json",
+  "savedImages": [
+    {
+      "view": "front",
+      "fileName": "front.jpg",
+      "originalName": "1-front.jpg",
+      "size": 104172,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/input_photos/front.jpg"
+    },
+    {
+      "view": "back",
+      "fileName": "back.jpg",
+      "originalName": "3-back.jpg",
+      "size": 84941,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/input_photos/back.jpg"
+    },
+    {
+      "view": "left_front",
+      "fileName": "left_front.jpg",
+      "originalName": "2-left_front.jpg",
+      "size": 133877,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/input_photos/left_front.jpg"
+    },
+    {
+      "view": "right_front",
+      "fileName": "right_front.jpg",
+      "originalName": "5-right_front.jpg",
+      "size": 83938,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/input_photos/right_front.jpg"
+    },
+    {
+      "view": "back_right",
+      "fileName": "back_right.jpg",
+      "originalName": "4-right_back.jpg",
+      "size": 96707,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/input_photos/back_right.jpg"
+    }
+  ],
+  "ignoredFiles": [],
+  "folders": {
+    "inputPhotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/input_photos",
+    "outputPhotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/output_photos",
+    "edited": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/output_photos/edited",
+    "comparison": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/output_photos/comparison",
+    "orthophotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/output_photos/orthophotos",
+    "outputGlb": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/output_glb",
+    "logs": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/logs"
+  },
+  "modelProvider": "hyper3d",
+  "pipelineStatus": "completed",
+  "pipelineStartedAt": "2026-07-01T16:38:36.642Z",
+  "pipelineLogPath": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/logs/node_pipeline_2026-07-01T16-38-36-642Z.log",
+  "pipelineCommand": "/home/usuario/projects/phone_mapping_webapp_v1/.venv/bin/python /home/usuario/projects/phone_mapping_webapp_v1/python_services/run_extended_pipeline.py --project /home/usuario/projects/phone_mapping_webapp_v1/projects/project_16 --model-provider hyper3d",
+  "pipelineFinishedAt": "2026-07-01T17:07:02.182Z",
+  "pipelineExitCode": 0,
+  "referenceScaleStatus": "saved",
+  "referenceScaleSavedAt": "2026-07-01T17:59:42.833Z",
+  "referenceScaleOutputDir": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/output_photos/orthophotos",
+  "projectTitle": "23-hover_190-pinecrest-drive-rochester-ny-job-21033365",
+  "projectTitleUpdatedAt": "2026-07-02T21:31:40.862Z"
+}

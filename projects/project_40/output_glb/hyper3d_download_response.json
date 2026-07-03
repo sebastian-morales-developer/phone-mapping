@@ -1,0 +1,16 @@
+{
+  "list": [
+    {
+      "url": "https://file.hyper3d.com/0df97674-9ea6-40ca-a4b0-f616a6481eb8/pack/glb/base_basic_pbr.glb?response-cache-control=private&response-content-type=model%2Fgltf-binary&response-content-disposition=attachment%3B%20filename%3D%22base_basic_pbr.glb%22&X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Content-Sha256=UNSIGNED-PAYLOAD&X-Tos-Credential=AKLTYzE0MDRlNzUyNWMzNGE5N2JlZTQ5ZGRkZWQ2NWY5ZTA%2F20260703%2Ffile.hyper3d.com%2Ftos%2Frequest&X-Tos-Date=20260703T043245Z&X-Tos-Expires=604800&X-Tos-SignedHeaders=host&X-Tos-Signature=d90af66cdddab29721fb87d4e4e4f1df14a8561f30ec01f31b6d13c4d1fc4e96",
+      "name": "base_basic_pbr.glb"
+    },
+    {
+      "url": "https://file.hyper3d.com/0df97674-9ea6-40ca-a4b0-f616a6481eb8/model_generate/v1/preview.webp?response-cache-control=private&response-content-type=image%2Fwebp&response-content-disposition=attachment%3B%20filename%3D%22preview.webp%22&X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Content-Sha256=UNSIGNED-PAYLOAD&X-Tos-Credential=AKLTYzE0MDRlNzUyNWMzNGE5N2JlZTQ5ZGRkZWQ2NWY5ZTA%2F20260703%2Ffile.hyper3d.com%2Ftos%2Frequest&X-Tos-Date=20260703T043245Z&X-Tos-Expires=604800&X-Tos-SignedHeaders=host&X-Tos-Signature=9616a49d6f6059ecfbe53e95ed8d3f64864bd80c08791c8524036d4bd270826f",
+      "name": "preview.webp"
+    },
+    {
+      "url": "https://file.hyper3d.com/0df97674-9ea6-40ca-a4b0-f616a6481eb8/texture_refine/render.jpg?response-cache-control=private&response-content-type=image%2Fjpeg&response-content-disposition=attachment%3B%20filename%3D%22render.jpg%22&X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Content-Sha256=UNSIGNED-PAYLOAD&X-Tos-Credential=AKLTYzE0MDRlNzUyNWMzNGE5N2JlZTQ5ZGRkZWQ2NWY5ZTA%2F20260703%2Ffile.hyper3d.com%2Ftos%2Frequest&X-Tos-Date=20260703T043245Z&X-Tos-Expires=604800&X-Tos-SignedHeaders=host&X-Tos-Signature=1a74963f9b8b567ceb8e0a95131c9cd507d743172c7329ae4c1ddf4bbc35e843",
+      "name": "render.jpg"
+    }
+  ]
+}

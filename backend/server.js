@@ -98,6 +98,7 @@ app.use('/api', (_req, res, next) => {
   res.set('Cache-Control', 'no-store');
   next();
 });
+app.use('/projects', express.static(PROJECTS_DIR));
 app.use(express.static(FRONTEND_DIR));
 
 async function ensureDir(dirPath) {
@@ -1895,6 +1896,26 @@ async function glbFilesForProject(projectName) {
   }
 }
 
+async function frontPreviewForProject(projectName) {
+  const inputPhotosDir = path.join(PROJECTS_DIR, projectName, 'input_photos');
+  try {
+    const entries = await fs.readdir(inputPhotosDir, { withFileTypes: true });
+    const frontImage = entries
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .find((fileName) => /^front\.(jpe?g|png|webp)$/i.test(fileName));
+
+    if (!frontImage) return null;
+    return {
+      fileName: frontImage,
+      url: `/projects/${encodeURIComponent(projectName)}/input_photos/${encodeURIComponent(frontImage)}`,
+    };
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
@@ -1921,6 +1942,7 @@ app.get('/api/projects', async (_req, res, next) => {
           name: projectName,
           projectTitle: normalizeProjectTitle(manifest.projectTitle ?? manifest.project_title ?? ''),
           modelProvider: manifest.modelProvider || null,
+          frontPreview: await frontPreviewForProject(projectName),
           glbFiles: await glbFilesForProject(projectName),
         };
       }),
@@ -2151,6 +2173,26 @@ app.get('/api/projects/:projectName/glb/:fileName', async (req, res, next) => {
     const glbPath = path.join(PROJECTS_DIR, projectName, 'output_glb', fileName);
     await fs.access(glbPath);
     res.download(glbPath, fileName);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/projects/:projectName/input-photos/:fileName', async (req, res, next) => {
+  try {
+    const { projectName, fileName } = req.params;
+    if (
+      !validProjectName(projectName)
+      || path.basename(fileName) !== fileName
+      || !/\.(png|jpe?g|webp)$/i.test(fileName)
+    ) {
+      res.status(400).json({ error: 'Invalid input photo request.' });
+      return;
+    }
+
+    const imagePath = path.join(PROJECTS_DIR, projectName, 'input_photos', fileName);
+    await fs.access(imagePath);
+    res.sendFile(imagePath);
   } catch (error) {
     next(error);
   }

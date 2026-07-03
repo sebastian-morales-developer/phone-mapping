@@ -1,0 +1,441 @@
+{
+  "method": "top_orthographic_visibility_grid",
+  "area_units_squared": 2.7888616753901583,
+  "projected_area_units_squared": 2.2164865491972376,
+  "visible_cell_count": 302442,
+  "grid": {
+    "columns": 700,
+    "rows": 558,
+    "cell_width_units": 0.002709332023348127,
+    "cell_depth_units": 0.0027049595096205296,
+    "requested_resolution": 700
+  },
+  "mesh": {
+    "vertex_count": 642105,
+    "face_count": 499981,
+    "upward_candidate_faces": 306471,
+    "visible_faces": 113406,
+    "bounds": [
+      [
+        -0.943306565284729,
+        -0.41474196314811707,
+        -0.7453972697257996
+      ],
+      [
+        0.95322585105896,
+        0.4144536852836609,
+        0.763970136642456
+      ]
+    ],
+    "span_x": 1.896532416343689,
+    "span_z": 1.5093674063682556
+  },
+  "filters": {
+    "normal_epsilon": 0.025,
+    "up_axis": "Y",
+    "projection_plane": "X/Z"
+  },
+  "face_breakdown_top_50": [
+    {
+      "face_index": 136004,
+      "mesh_area": 5.106885376540588e-05,
+      "visible_cell_count": 4,
+      "visible_area": 0.0010800817251323117,
+      "projected_visible_area": 2.9314533685099786e-05,
+      "normal_y": 0.027141032944991927
+    },
+    {
+      "face_index": 281432,
+      "mesh_area": 3.37636583284965e-05,
+      "visible_cell_count": 5,
+      "visible_area": 0.0007929312959854605,
+      "projected_visible_area": 3.664316710637473e-05,
+      "normal_y": 0.04621228508938388
+    },
+    {
+      "face_index": 377058,
+      "mesh_area": 4.657573200757244e-05,
+      "visible_cell_count": 7,
+      "visible_area": 0.0006270656483684457,
+      "projected_visible_area": 5.1300433948924625e-05,
+      "normal_y": 0.081810308190861
+    },
+    {
+      "face_index": 415528,
+      "mesh_area": 2.3998164905929555e-05,
+      "visible_cell_count": 4,
+      "visible_area": 0.0005640678468117659,
+      "projected_visible_area": 2.9314533685099786e-05,
+      "normal_y": 0.05196987179962819
+    },
+    {
+      "face_index": 132445,
+      "mesh_area": 3.753669609672e-05,
+      "visible_cell_count": 6,
+      "visible_area": 0.0005553583868964016,
+      "projected_visible_area": 4.397180052764968e-05,
+      "normal_y": 0.07917734127215463
+    },
+    {
+      "face_index": 122677,
+      "mesh_area": 4.924787529761814e-05,
+      "visible_cell_count": 7,
+      "visible_area": 0.0005257982733318619,
+      "projected_visible_area": 5.1300433948924625e-05,
+      "normal_y": 0.09756676001205873
+    },
+    {
+      "face_index": 411068,
+      "mesh_area": 5.3581924443099464e-05,
+      "visible_cell_count": 8,
+      "visible_area": 0.0005254501118815575,
+      "projected_visible_area": 5.862906737019957e-05,
+      "normal_y": 0.11157875133046928
+    },
+    {
+      "face_index": 130808,
+      "mesh_area": 5.067536285528286e-05,
+      "visible_cell_count": 7,
+      "visible_area": 0.0005236753585327595,
+      "projected_visible_area": 5.1300433948924625e-05,
+      "normal_y": 0.09796228352744887
+    },
+    {
+      "face_index": 287271,
+      "mesh_area": 2.381440892087097e-05,
+      "visible_cell_count": 4,
+      "visible_area": 0.0005212741317530937,
+      "projected_visible_area": 2.9314533685099786e-05,
+      "normal_y": 0.05623631003232841
+    },
+    {
+      "face_index": 305313,
+      "mesh_area": 3.167368186956014e-05,
+      "visible_cell_count": 12,
+      "visible_area": 0.0005067835910096147,
+      "projected_visible_area": 8.794360105529936e-05,
+      "normal_y": 0.17353285034367041
+    },
+    {
+      "face_index": 258311,
+      "mesh_area": 2.305516119222219e-05,
+      "visible_cell_count": 4,
+      "visible_area": 0.0004994281211574928,
+      "projected_visible_area": 2.9314533685099786e-05,
+      "normal_y": 0.05869620160186286
+    },
+    {
+      "face_index": 289195,
+      "mesh_area": 2.3827831874440217e-05,
+      "visible_cell_count": 3,
+      "visible_area": 0.0004984774906720037,
+      "projected_visible_area": 2.198590026382484e-05,
+      "normal_y": 0.0441061044385081
+    },
+    {
+      "face_index": 296795,
+      "mesh_area": 4.119556508202022e-05,
+      "visible_cell_count": 11,
+      "visible_area": 0.0004936301315479403,
+      "projected_visible_area": 8.06149676340244e-05,
+      "normal_y": 0.16331046765972237
+    },
+    {
+      "face_index": 438380,
+      "mesh_area": 3.629462685620716e-05,
+      "visible_cell_count": 6,
+      "visible_area": 0.00048790316975338846,
+      "projected_visible_area": 4.397180052764968e-05,
+      "normal_y": 0.0901240312701295
+    },
+    {
+      "face_index": 446135,
+      "mesh_area": 5.209660816856678e-05,
+      "visible_cell_count": 10,
+      "visible_area": 0.0004819454614847499,
+      "projected_visible_area": 7.328633421274946e-05,
+      "normal_y": 0.15206354259872712
+    },
+    {
+      "face_index": 134288,
+      "mesh_area": 3.626541078620571e-05,
+      "visible_cell_count": 5,
+      "visible_area": 0.0004767901625551462,
+      "projected_visible_area": 3.664316710637473e-05,
+      "normal_y": 0.07685386567122499
+    },
+    {
+      "face_index": 377059,
+      "mesh_area": 2.813366937556462e-05,
+      "visible_cell_count": 6,
+      "visible_area": 0.00047391646532717,
+      "projected_visible_area": 4.397180052764968e-05,
+      "normal_y": 0.09278386328547075
+    },
+    {
+      "face_index": 437794,
+      "mesh_area": 3.434538100949532e-05,
+      "visible_cell_count": 6,
+      "visible_area": 0.0004672902953369805,
+      "projected_visible_area": 4.397180052764968e-05,
+      "normal_y": 0.09409953719655138
+    },
+    {
+      "face_index": 444443,
+      "mesh_area": 4.3320993041593283e-05,
+      "visible_cell_count": 9,
+      "visible_area": 0.0004082797155718046,
+      "projected_visible_area": 6.595770079147453e-05,
+      "normal_y": 0.1615502761362987
+    },
+    {
+      "face_index": 127622,
+      "mesh_area": 3.193751412685576e-05,
+      "visible_cell_count": 5,
+      "visible_area": 0.00039492013752710883,
+      "projected_visible_area": 3.664316710637473e-05,
+      "normal_y": 0.09278627151257741
+    },
+    {
+      "face_index": 414617,
+      "mesh_area": 1.4698128781490995e-05,
+      "visible_cell_count": 2,
+      "visible_area": 0.0003921822647624908,
+      "projected_visible_area": 1.4657266842549893e-05,
+      "normal_y": 0.03737360956754755
+    },
+    {
+      "face_index": 440353,
+      "mesh_area": 6.383971161339139e-05,
+      "visible_cell_count": 9,
+      "visible_area": 0.00038129921077553226,
+      "projected_visible_area": 6.595770079147453e-05,
+      "normal_y": 0.1729814773477286
+    },
+    {
+      "face_index": 449848,
+      "mesh_area": 4.711093328344282e-05,
+      "visible_cell_count": 6,
+      "visible_area": 0.00037739255273059534,
+      "projected_visible_area": 4.397180052764968e-05,
+      "normal_y": 0.1165147542247324
+    },
+    {
+      "face_index": 136261,
+      "mesh_area": 4.658822523551079e-05,
+      "visible_cell_count": 7,
+      "visible_area": 0.0003767903040510508,
+      "projected_visible_area": 5.1300433948924625e-05,
+      "normal_y": 0.13615115197331087
+    },
+    {
+      "face_index": 137076,
+      "mesh_area": 3.854380281629143e-05,
+      "visible_cell_count": 4,
+      "visible_area": 0.0003766575514775469,
+      "projected_visible_area": 2.9314533685099786e-05,
+      "normal_y": 0.07782807903387347
+    },
+    {
+      "face_index": 430801,
+      "mesh_area": 3.952855782376651e-05,
+      "visible_cell_count": 8,
+      "visible_area": 0.00036843617044569855,
+      "projected_visible_area": 5.862906737019957e-05,
+      "normal_y": 0.1591295102738577
+    },
+    {
+      "face_index": 138099,
+      "mesh_area": 2.9539683357758468e-05,
+      "visible_cell_count": 2,
+      "visible_area": 0.00036141022077596397,
+      "projected_visible_area": 1.4657266842549893e-05,
+      "normal_y": 0.04055576184613729
+    },
+    {
+      "face_index": 436180,
+      "mesh_area": 2.426002945154863e-05,
+      "visible_cell_count": 5,
+      "visible_area": 0.00035430087570223376,
+      "projected_visible_area": 3.664316710637473e-05,
+      "normal_y": 0.10342386829766367
+    },
+    {
+      "face_index": 431610,
+      "mesh_area": 2.1709047174834367e-05,
+      "visible_cell_count": 7,
+      "visible_area": 0.0003436153855337674,
+      "projected_visible_area": 5.1300433948924625e-05,
+      "normal_y": 0.14929609123652957
+    },
+    {
+      "face_index": 180731,
+      "mesh_area": 3.233874527481022e-05,
+      "visible_cell_count": 8,
+      "visible_area": 0.000341576573341278,
+      "projected_visible_area": 5.862906737019957e-05,
+      "normal_y": 0.1716425303898747
+    },
+    {
+      "face_index": 208140,
+      "mesh_area": 5.345397442941968e-05,
+      "visible_cell_count": 8,
+      "visible_area": 0.00032264287629737065,
+      "projected_visible_area": 5.862906737019957e-05,
+      "normal_y": 0.18171505301162405
+    },
+    {
+      "face_index": 113360,
+      "mesh_area": 0.0003258694257508461,
+      "visible_cell_count": 44,
+      "visible_area": 0.00032247159142323223,
+      "projected_visible_area": 0.0003224598705360976,
+      "normal_y": 0.9999636529621637
+    },
+    {
+      "face_index": 410158,
+      "mesh_area": 4.269531624512714e-05,
+      "visible_cell_count": 4,
+      "visible_area": 0.0003214157686917678,
+      "projected_visible_area": 2.9314533685099786e-05,
+      "normal_y": 0.09120440420336663
+    },
+    {
+      "face_index": 329497,
+      "mesh_area": 3.8424521277309787e-05,
+      "visible_cell_count": 5,
+      "visible_area": 0.00031761843169961993,
+      "projected_visible_area": 3.664316710637473e-05,
+      "normal_y": 0.11536851595888849
+    },
+    {
+      "face_index": 301689,
+      "mesh_area": 3.6499825079153156e-05,
+      "visible_cell_count": 8,
+      "visible_area": 0.00031728122880654244,
+      "projected_visible_area": 5.862906737019957e-05,
+      "normal_y": 0.18478580529561608
+    },
+    {
+      "face_index": 120032,
+      "mesh_area": 3.6025696367006906e-05,
+      "visible_cell_count": 5,
+      "visible_area": 0.00031679613945500906,
+      "projected_visible_area": 3.664316710637473e-05,
+      "normal_y": 0.11566797237306214
+    },
+    {
+      "face_index": 423588,
+      "mesh_area": 1.4167392742119628e-05,
+      "visible_cell_count": 3,
+      "visible_area": 0.00031089073918092803,
+      "projected_visible_area": 2.198590026382484e-05,
+      "normal_y": 0.07071905815447845
+    },
+    {
+      "face_index": 185865,
+      "mesh_area": 4.8043413600121004e-05,
+      "visible_cell_count": 7,
+      "visible_area": 0.0003107045112351336,
+      "projected_visible_area": 5.1300433948924625e-05,
+      "normal_y": 0.16511003894018683
+    },
+    {
+      "face_index": 263826,
+      "mesh_area": 1.6638330683089607e-05,
+      "visible_cell_count": 4,
+      "visible_area": 0.0003104082278409704,
+      "projected_visible_area": 2.9314533685099786e-05,
+      "normal_y": 0.09443864903000679
+    },
+    {
+      "face_index": 465679,
+      "mesh_area": 0.00027718483749179047,
+      "visible_cell_count": 42,
+      "visible_area": 0.00030790071714741887,
+      "projected_visible_area": 0.00030780260369354777,
+      "normal_y": 0.9996813471083144
+    },
+    {
+      "face_index": 363970,
+      "mesh_area": 3.6243245008402853e-05,
+      "visible_cell_count": 9,
+      "visible_area": 0.00030572056439781694,
+      "projected_visible_area": 6.595770079147453e-05,
+      "normal_y": 0.21574505765221436
+    },
+    {
+      "face_index": 445016,
+      "mesh_area": 5.634785646761791e-05,
+      "visible_cell_count": 6,
+      "visible_area": 0.0003055799601648212,
+      "projected_visible_area": 4.397180052764968e-05,
+      "normal_y": 0.1438962178800355
+    },
+    {
+      "face_index": 435200,
+      "mesh_area": 2.27500978502412e-05,
+      "visible_cell_count": 4,
+      "visible_area": 0.0002916072230737582,
+      "projected_visible_area": 2.9314533685099786e-05,
+      "normal_y": 0.10052746079504712
+    },
+    {
+      "face_index": 434435,
+      "mesh_area": 1.61316515629473e-05,
+      "visible_cell_count": 4,
+      "visible_area": 0.00029126490749780174,
+      "projected_visible_area": 2.9314533685099786e-05,
+      "normal_y": 0.10064560793449184
+    },
+    {
+      "face_index": 166553,
+      "mesh_area": 4.2859082446524824e-05,
+      "visible_cell_count": 8,
+      "visible_area": 0.00028879193909226754,
+      "projected_visible_area": 5.862906737019957e-05,
+      "normal_y": 0.20301490254361942
+    },
+    {
+      "face_index": 356239,
+      "mesh_area": 1.5051497330433314e-05,
+      "visible_cell_count": 1,
+      "visible_area": 0.00028733091656475007,
+      "projected_visible_area": 7.3286334212749465e-06,
+      "normal_y": 0.025505899291639357
+    },
+    {
+      "face_index": 130854,
+      "mesh_area": 3.6789026691374056e-05,
+      "visible_cell_count": 8,
+      "visible_area": 0.0002815647901274164,
+      "projected_visible_area": 5.862906737019957e-05,
+      "normal_y": 0.2082258486356486
+    },
+    {
+      "face_index": 1785,
+      "mesh_area": 2.289349155610178e-05,
+      "visible_cell_count": 1,
+      "visible_area": 0.0002813890417571243,
+      "projected_visible_area": 7.3286334212749465e-06,
+      "normal_y": 0.026044487644264838
+    },
+    {
+      "face_index": 424559,
+      "mesh_area": 2.3994795427443355e-05,
+      "visible_cell_count": 6,
+      "visible_area": 0.00027930558882411694,
+      "projected_visible_area": 4.397180052764968e-05,
+      "normal_y": 0.15743258383325584
+    },
+    {
+      "face_index": 416507,
+      "mesh_area": 4.358336532189668e-05,
+      "visible_cell_count": 5,
+      "visible_area": 0.0002753557609314783,
+      "projected_visible_area": 3.664316710637473e-05,
+      "normal_y": 0.13307572350190744
+    }
+  ],
+  "model": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_16/output_glb/base_basic_pbr.glb"
+}

@@ -1,0 +1,21 @@
+{
+  "run_id": "20260702_232403",
+  "project_dir": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_40",
+  "model_provider": "hyper3d",
+  "dry_run": false,
+  "started_at": "2026-07-02T23:24:03",
+  "status": "completed",
+  "edited_images": [
+    "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_40/output_photos/edited/back_edited.png",
+    "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_40/output_photos/edited/front_edited.png",
+    "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_40/output_photos/edited/left_edited.png",
+    "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_40/output_photos/edited/left_front_edited.png",
+    "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_40/output_photos/edited/back_left_edited.png"
+  ],
+  "glb_files": [
+    "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_40/output_glb/base_basic_pbr.glb"
+  ],
+  "finished_at": "2026-07-02T23:32:53",
+  "elapsed_seconds": 529.93,
+  "elapsed": "8m 49s"
+}

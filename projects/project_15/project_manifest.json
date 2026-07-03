@@ -1,0 +1,67 @@
+{
+  "projectName": "project_15",
+  "createdAt": "2026-07-01T16:20:33.115Z",
+  "source": "batch_upload",
+  "batchId": "batch_20260701162033_26ddcfdd",
+  "batchSourceFolder": "22-hover_15-farwell-drive-batavia-ny-job-21042364_-_DONE_R_-_RR",
+  "batchConfigPath": "/home/usuario/projects/phone_mapping_webapp_v1/batch_uploads/batch_20260701162033_26ddcfdd/extracted/batch_upload_1/22-hover_15-farwell-drive-batavia-ny-job-21042364_-_DONE_R_-_RR/phone_mapping_project.json",
+  "savedImages": [
+    {
+      "view": "front",
+      "fileName": "front.jpg",
+      "originalName": "1-front.jpg",
+      "size": 72611,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/input_photos/front.jpg"
+    },
+    {
+      "view": "left",
+      "fileName": "left.jpg",
+      "originalName": "3-left.jpg",
+      "size": 93100,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/input_photos/left.jpg"
+    },
+    {
+      "view": "left_front",
+      "fileName": "left_front.jpg",
+      "originalName": "2-left_front.jpg",
+      "size": 63503,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/input_photos/left_front.jpg"
+    },
+    {
+      "view": "back_left",
+      "fileName": "back_left.jpg",
+      "originalName": "4-left_back.jpg",
+      "size": 65254,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/input_photos/back_left.jpg"
+    },
+    {
+      "view": "back_right",
+      "fileName": "back_right.jpg",
+      "originalName": "6-right_back.jpg",
+      "size": 75480,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/input_photos/back_right.jpg"
+    }
+  ],
+  "ignoredFiles": [],
+  "folders": {
+    "inputPhotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/input_photos",
+    "outputPhotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/output_photos",
+    "edited": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/output_photos/edited",
+    "comparison": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/output_photos/comparison",
+    "orthophotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/output_photos/orthophotos",
+    "outputGlb": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/output_glb",
+    "logs": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/logs"
+  },
+  "modelProvider": "hyper3d",
+  "pipelineStatus": "completed",
+  "pipelineStartedAt": "2026-07-01T16:20:33.116Z",
+  "pipelineLogPath": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/logs/node_pipeline_2026-07-01T16-20-33-116Z.log",
+  "pipelineCommand": "/home/usuario/projects/phone_mapping_webapp_v1/.venv/bin/python /home/usuario/projects/phone_mapping_webapp_v1/python_services/run_extended_pipeline.py --project /home/usuario/projects/phone_mapping_webapp_v1/projects/project_15 --model-provider hyper3d",
+  "pipelineFinishedAt": "2026-07-01T16:38:36.634Z",
+  "pipelineExitCode": 0,
+  "referenceScaleStatus": "saved",
+  "referenceScaleSavedAt": "2026-07-03T20:07:47.768Z",
+  "referenceScaleOutputDir": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_15/output_photos/orthophotos",
+  "projectTitle": "22-hover_15-farwell-drive-batavia-ny-job-21042364 V2",
+  "projectTitleUpdatedAt": "2026-07-02T21:32:42.513Z"
+}

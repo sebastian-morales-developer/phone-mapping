@@ -30,6 +30,7 @@ let statusTimer = null;
 let statusFetchFailures = 0;
 const acceptedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const HYPER3D_MAX_IMAGES = 5;
+const FRONT_PREVIEW_EXTENSIONS = ['jpeg', 'jpg', 'png', 'webp'];
 const PIPELINE_STAGES = [
   {
     key: 'upload',
@@ -114,6 +115,24 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+function frontPreviewFallbackUrl(projectName, extensionIndex = 0) {
+  const extension = FRONT_PREVIEW_EXTENSIONS[extensionIndex] || FRONT_PREVIEW_EXTENSIONS[0];
+  return `/projects/${encodeURIComponent(projectName)}/input_photos/front.${extension}`;
+}
+
+window.handleProjectPreviewError = function handleProjectPreviewError(image, projectName) {
+  const currentIndex = Number(image.dataset.extensionIndex || '0');
+  const nextIndex = currentIndex + 1;
+  if (nextIndex < FRONT_PREVIEW_EXTENSIONS.length) {
+    image.dataset.extensionIndex = String(nextIndex);
+    image.src = frontPreviewFallbackUrl(projectName, nextIndex);
+    return;
+  }
+
+  const holder = image.closest('.project-preview-media');
+  if (holder) holder.innerHTML = '<span>No front photo</span>';
+};
 
 function linesFromStatus(messageOrLines) {
   if (Array.isArray(messageOrLines)) return messageOrLines.filter(Boolean).map(String);
@@ -473,6 +492,8 @@ async function loadProjects() {
         const projectTitle = typeof project === 'string' ? '' : project.projectTitle || '';
         const projectTitleLabel = projectTitle.trim() ? projectTitle : 'Untitled';
         const modelProvider = typeof project === 'string' ? null : project.modelProvider || null;
+        const frontPreview = typeof project === 'string' ? null : project.frontPreview || null;
+        const previewUrl = frontPreview?.url || frontPreviewFallbackUrl(projectName);
         const glbFiles = typeof project === 'string' ? [] : project.glbFiles || [];
         const glbLinks = glbFiles.length
           ? glbFiles
@@ -490,13 +511,24 @@ async function loadProjects() {
           : '<span class="mt-2 block text-xs text-zinc-500">GLB pending</span>';
 
         return `
-          <li class="border border-zinc-800 px-3 py-2 text-zinc-300">
-            <div class="font-medium">
-              ${escapeHtml(projectName)}
-              <span class="project-provider-label">(${escapeHtml(providerLabel(modelProvider))})</span>
+          <li class="project-preview-card border border-zinc-800 text-zinc-300">
+            <div class="project-preview-media">
+              <img
+                src="${previewUrl}"
+                alt="${escapeHtml(projectName)} front photo"
+                loading="lazy"
+                data-extension-index="0"
+                onerror="window.handleProjectPreviewError(this, '${escapeHtml(projectName)}')"
+              >
             </div>
-            <div class="project-list-title ${projectTitle.trim() ? '' : 'is-empty'}">${escapeHtml(projectTitleLabel)}</div>
-            ${glbLinks}
+            <div class="project-preview-body">
+              <div class="font-medium">
+                ${escapeHtml(projectName)}
+                <span class="project-provider-label">(${escapeHtml(providerLabel(modelProvider))})</span>
+              </div>
+              <div class="project-list-title ${projectTitle.trim() ? '' : 'is-empty'}">${escapeHtml(projectTitleLabel)}</div>
+              ${glbLinks}
+            </div>
           </li>
         `;
       })

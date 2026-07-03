@@ -1,0 +1,24 @@
+{
+  "model": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_40/output_glb/base_basic_pbr.glb",
+  "unit_system": "GLB internal model units",
+  "axis_mapping": {
+    "width": "X axis, equivalent to front image width",
+    "height": "Y axis, equivalent to front/back/left/right image height",
+    "length": "Z axis, equivalent to right/left image width"
+  },
+  "bounds": {
+    "min": [
+      -0.6349678039550781,
+      -0.6303200125694275,
+      -0.9430165886878967
+    ],
+    "max": [
+      0.6336854100227356,
+      0.6327872276306152,
+      0.9498247504234314
+    ]
+  },
+  "width_units": 1.2686532139778137,
+  "height_units": 1.2631072402000427,
+  "length_units": 1.8928413391113281
+}

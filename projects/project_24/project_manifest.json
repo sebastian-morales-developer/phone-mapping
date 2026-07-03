@@ -1,0 +1,137 @@
+{
+  "projectName": "project_24",
+  "createdAt": "2026-07-03T01:16:38.390Z",
+  "source": "batch_two_models",
+  "batchId": "batch_20260703001223_6719a0e7",
+  "batchSourceFolder": "32-hover_4363-olympus-heights-syracuse-ny-job-21043296 - PEND SCALE EXAM R - RR 3",
+  "batchConfigPath": null,
+  "savedImages": [
+    {
+      "view": "front",
+      "fileName": "front.jpg",
+      "originalName": "1-front.jpg",
+      "size": 94152,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/input_photos/front.jpg"
+    },
+    {
+      "view": "left_front",
+      "fileName": "left_front.jpg",
+      "originalName": "2-left_front.jpg",
+      "size": 73909,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/input_photos/left_front.jpg"
+    },
+    {
+      "view": "left",
+      "fileName": "left.jpg",
+      "originalName": "4-left.jpg",
+      "size": 78006,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/input_photos/left.jpg"
+    },
+    {
+      "view": "right_front",
+      "fileName": "right_front.jpg",
+      "originalName": "3-right_front.jpg",
+      "size": 107643,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/input_photos/right_front.jpg"
+    },
+    {
+      "view": "back_left",
+      "fileName": "back_left.jpg",
+      "originalName": "left_back.jpg",
+      "size": 67190,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/input_photos/back_left.jpg"
+    }
+  ],
+  "batchSelectionMapping": [
+    {
+      "sourceView": "front",
+      "projectView": "front",
+      "originalFileName": "1-front.jpg"
+    },
+    {
+      "sourceView": "left_front",
+      "projectView": "left_front",
+      "originalFileName": "2-left_front.jpg"
+    },
+    {
+      "sourceView": "left",
+      "projectView": "left",
+      "originalFileName": "4-left.jpg"
+    },
+    {
+      "sourceView": "right_front",
+      "projectView": "right_front",
+      "originalFileName": "3-right_front.jpg"
+    },
+    {
+      "sourceView": "back_left",
+      "projectView": "back_left",
+      "originalFileName": "left_back.jpg"
+    }
+  ],
+  "ignoredFiles": [],
+  "duplicateFiles": [],
+  "folders": {
+    "inputPhotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/input_photos",
+    "outputPhotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/output_photos",
+    "edited": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/output_photos/edited",
+    "comparison": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/output_photos/comparison",
+    "orthophotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/output_photos/orthophotos",
+    "outputGlb": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/output_glb",
+    "logs": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/logs"
+  },
+  "modelProvider": "hyper3d",
+  "projectTitle": "32-hover_4363-olympus-heights-syracuse-ny-job-21043296 - PEND SCALE EXAM R - RR 3",
+  "pipelineStatus": "completed",
+  "hyper3dSelectionMethod": "openai",
+  "hyper3dSelectionReason": "Includes front and broad angular coverage with sharp, unobstructed views showing walls, roof planes, corners, doors, and windows.",
+  "hyper3dSelectedViews": [
+    "front",
+    "left_front",
+    "left",
+    "right_front",
+    "back_left"
+  ],
+  "hyper3dViewNotes": {
+    "front": "Sharp, clear front view showing main facade, door, windows and roof.",
+    "left_front": "Good angle showing front and left garage area with roof and architectural volumes.",
+    "left": "Clear view of left wall, door, and roof planes.",
+    "right_front": "Visible right front corner with wall and window details.",
+    "back_left": "Shows rear left wall and roof with minimal obstructions."
+  },
+  "sourceIgnoredFiles": [],
+  "sourceDuplicateFiles": [],
+  "batchMode": "two_models",
+  "batchSourceIndex": 3,
+  "batchSourceTotal": 19,
+  "reusedEditedFromTencent": [
+    {
+      "sourceView": "front",
+      "fromTencentView": "front",
+      "targetView": "front"
+    },
+    {
+      "sourceView": "left_front",
+      "fromTencentView": "left_front",
+      "targetView": "left_front"
+    },
+    {
+      "sourceView": "left",
+      "fromTencentView": "left",
+      "targetView": "left"
+    },
+    {
+      "sourceView": "right_front",
+      "fromTencentView": "right_front",
+      "targetView": "right_front"
+    }
+  ],
+  "pendingOpenAiEditsAfterReuse": [
+    "back_left"
+  ],
+  "pipelineStartedAt": "2026-07-03T01:16:38.447Z",
+  "pipelineLogPath": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_24/logs/node_pipeline_2026-07-03T01-16-38-447Z.log",
+  "pipelineCommand": "/home/usuario/projects/phone_mapping_webapp_v1/.venv/bin/python /home/usuario/projects/phone_mapping_webapp_v1/python_services/run_extended_pipeline.py --project /home/usuario/projects/phone_mapping_webapp_v1/projects/project_24 --model-provider hyper3d",
+  "pipelineFinishedAt": "2026-07-03T01:24:33.072Z",
+  "pipelineExitCode": 0
+}

@@ -5,7 +5,8 @@ node_modules/
 .env
 
 # Generated projects and outputs
-projects/
+# projects/
+frontend/projects
 batch_projects/
 batch_uploads/
 projects_failed/

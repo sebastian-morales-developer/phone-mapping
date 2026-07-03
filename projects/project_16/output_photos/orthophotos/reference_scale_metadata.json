@@ -1,0 +1,45 @@
+{
+  "source": "manual_reference_scale",
+  "source_image": "base_basic_pbr_front.png",
+  "output_image": "reference_scale.png",
+  "known_meters": 2.44,
+  "pixel_distance": 188.37208092676866,
+  "pixels_per_meter": 77.20167251097077,
+  "meters_per_pixel": 0.012953087251547493,
+  "line": {
+    "start": {
+      "x": 756.9934050286656,
+      "y": 423.5128974205159
+    },
+    "end": {
+      "x": 758.7704500318507,
+      "y": 611.8765961093496
+    }
+  },
+  "source_image_size_px": {
+    "width": 1482,
+    "height": 648
+  },
+  "annotated_image_size_px": [
+    1482,
+    648
+  ],
+  "building_dimensions": {
+    "method": "manual_reference_scale",
+    "reference_length_m": 2.44,
+    "reference_length_px": 188.37208092676866,
+    "pixels_per_meter": 77.20167251097077,
+    "meters_per_pixel": 0.012953087251547493,
+    "front_image_size_px": [
+      1482,
+      648
+    ],
+    "right_image_size_px": [
+      1180,
+      648
+    ],
+    "front_width_m": 19.196475306793385,
+    "building_length_m": 15.284642956826042
+  },
+  "created_at": "2026-07-01T17:59:42.831Z"
+}

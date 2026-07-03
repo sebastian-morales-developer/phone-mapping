@@ -1,0 +1,73 @@
+{
+  "front_image": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/orthophotos/base_basic_pbr_front.png",
+  "right_image": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/orthophotos/base_basic_pbr_right.png",
+  "output_image": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/orthophotos/human_scale_front.png",
+  "original_size": [
+    1482,
+    596
+  ],
+  "visible_bounds": {
+    "left": 0,
+    "top": 0,
+    "right": 1481,
+    "bottom": 595
+  },
+  "cropped_size": [
+    1482,
+    596
+  ],
+  "analysis": {
+    "reference_type": "front_door",
+    "visible_floors": 2,
+    "confidence": 0.9,
+    "reference_height_px": 81,
+    "reference_top_y": 222,
+    "reference_bottom_y": 303,
+    "assumed_reference_height_m": 2.05,
+    "estimated_person_height_px": 67,
+    "reason": "Front pedestrian door is visible and measurable, providing a clear height reference.",
+    "source": "openai"
+  },
+  "scale_calculation": {
+    "height_px": 67,
+    "raw_height_px": 67,
+    "height_ratio": 0.11241610738255034,
+    "source": "architectural_reference",
+    "reference_type": "front_door",
+    "reference_height_px": 81.0,
+    "assumed_reference_height_m": 2.05,
+    "confidence": 0.9,
+    "clamped": false
+  },
+  "marker_geometry": {
+    "left": 720,
+    "top": 515,
+    "right": 762,
+    "bottom": 595,
+    "width": 43,
+    "height": 81,
+    "height_ratio": 0.1342281879194631,
+    "scale_source": "architectural_reference",
+    "reference_type": "front_door"
+  },
+  "building_dimensions": {
+    "method": "human_scale_marker_pixel_ratio",
+    "person_height_m": 1.7,
+    "person_height_px": 81,
+    "pixels_per_meter": 47.64705882352941,
+    "meters_per_pixel": 0.020987654320987655,
+    "front_image_size_px": [
+      1482,
+      596
+    ],
+    "right_image_size_px": [
+      1453,
+      596
+    ],
+    "front_width_m": 31.103703703703705,
+    "building_length_m": 30.49506172839506,
+    "people_across_front": 18.296296296296298,
+    "people_across_right": 17.938271604938272
+  },
+  "transparent_background": true
+}

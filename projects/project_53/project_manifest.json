@@ -1,0 +1,139 @@
+{
+  "projectName": "project_53",
+  "createdAt": "2026-07-03T15:56:51.443Z",
+  "source": "batch_two_models",
+  "batchId": "batch_20260703140704_3c9f0d5e",
+  "batchSourceFolder": "48-hover_job-21230185_apr24-webcapture - PEND R",
+  "batchConfigPath": null,
+  "savedImages": [
+    {
+      "view": "front",
+      "fileName": "front.jpg",
+      "originalName": "FRONT.jpg",
+      "size": 102228,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/input_photos/front.jpg"
+    },
+    {
+      "view": "left_front",
+      "fileName": "left_front.jpg",
+      "originalName": "left_front.jpg",
+      "size": 108198,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/input_photos/left_front.jpg"
+    },
+    {
+      "view": "right_front",
+      "fileName": "right_front.jpg",
+      "originalName": "right_front.jpg",
+      "size": 97061,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/input_photos/right_front.jpg"
+    },
+    {
+      "view": "left",
+      "fileName": "left.jpg",
+      "originalName": "LEFT.jpg",
+      "size": 110249,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/input_photos/left.jpg"
+    },
+    {
+      "view": "back_left",
+      "fileName": "back_left.jpg",
+      "originalName": "left_back.jpg",
+      "size": 116652,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/input_photos/back_left.jpg"
+    }
+  ],
+  "batchSelectionMapping": [
+    {
+      "sourceView": "front",
+      "projectView": "front",
+      "originalFileName": "FRONT.jpg"
+    },
+    {
+      "sourceView": "left_front",
+      "projectView": "left_front",
+      "originalFileName": "left_front.jpg"
+    },
+    {
+      "sourceView": "right_front",
+      "projectView": "right_front",
+      "originalFileName": "right_front.jpg"
+    },
+    {
+      "sourceView": "left",
+      "projectView": "left",
+      "originalFileName": "LEFT.jpg"
+    },
+    {
+      "sourceView": "back_left",
+      "projectView": "back_left",
+      "originalFileName": "left_back.jpg"
+    }
+  ],
+  "ignoredFiles": [],
+  "duplicateFiles": [],
+  "folders": {
+    "inputPhotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/input_photos",
+    "outputPhotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/output_photos",
+    "edited": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/output_photos/edited",
+    "comparison": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/output_photos/comparison",
+    "orthophotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/output_photos/orthophotos",
+    "outputGlb": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/output_glb",
+    "logs": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/logs"
+  },
+  "modelProvider": "hyper3d",
+  "projectTitle": "48-hover_job-21230185_apr24-webcapture - PEND R",
+  "pipelineStatus": "completed",
+  "hyper3dSelectionMethod": "openai",
+  "hyper3dSelectionReason": "Includes front view and broad angular coverage with clear visibility of walls, corners, roof planes, and architectural details with minimal obstructions.",
+  "hyper3dSelectedViews": [
+    "front",
+    "left_front",
+    "right_front",
+    "left",
+    "back_left"
+  ],
+  "hyper3dViewNotes": {
+    "front": "Clear front view with visible doors, porch, roof, and garage.",
+    "left_front": "Shows angled front and left side, good door and window visibility.",
+    "right_front": "Provides right-front corner and roof planes visibility with minimal obstruction.",
+    "left": "Good full left wall and roof view, minimal obstruction.",
+    "back_left": "Left-back corner view with visible walls and roof planes providing rear perspective."
+  },
+  "sourceIgnoredFiles": [],
+  "sourceDuplicateFiles": [],
+  "batchMode": "two_models",
+  "batchSourceIndex": 5,
+  "batchSourceTotal": 6,
+  "reusedEditedFromTencent": [
+    {
+      "sourceView": "front",
+      "fromTencentView": "front",
+      "targetView": "front"
+    },
+    {
+      "sourceView": "left_front",
+      "fromTencentView": "left_front",
+      "targetView": "left_front"
+    },
+    {
+      "sourceView": "right_front",
+      "fromTencentView": "right_front",
+      "targetView": "right_front"
+    },
+    {
+      "sourceView": "left",
+      "fromTencentView": "left",
+      "targetView": "left"
+    }
+  ],
+  "pendingOpenAiEditsAfterReuse": [
+    "back_left"
+  ],
+  "pipelineStartedAt": "2026-07-03T15:56:51.493Z",
+  "pipelineLogPath": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/logs/node_pipeline_2026-07-03T15-56-51-493Z.log",
+  "pipelineCommand": "/home/usuario/projects/phone_mapping_webapp_v1/.venv/bin/python /home/usuario/projects/phone_mapping_webapp_v1/python_services/run_extended_pipeline.py --project /home/usuario/projects/phone_mapping_webapp_v1/projects/project_53 --model-provider hyper3d",
+  "pipelineFinishedAt": "2026-07-03T16:05:23.597Z",
+  "pipelineExitCode": 0,
+  "projectComments": "ghgjgjhgjhgjhghjgjhgjlkjljkjlk",
+  "projectCommentsUpdatedAt": "2026-07-03T21:48:02.392Z"
+}

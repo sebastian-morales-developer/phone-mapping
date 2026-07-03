@@ -1,0 +1,77 @@
+{
+  "projectName": "project_10",
+  "createdAt": "2026-06-30T05:38:30.630Z",
+  "savedImages": [
+    {
+      "view": "front",
+      "fileName": "front.jpeg",
+      "originalName": "front.jpeg",
+      "mimeType": "image/jpeg",
+      "size": 675983,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/input_photos/front.jpeg"
+    },
+    {
+      "view": "right",
+      "fileName": "right.jpeg",
+      "originalName": "right.jpeg",
+      "mimeType": "image/jpeg",
+      "size": 879796,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/input_photos/right.jpeg"
+    },
+    {
+      "view": "left_front",
+      "fileName": "left_front.jpeg",
+      "originalName": "left_front.jpeg",
+      "mimeType": "image/jpeg",
+      "size": 694446,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/input_photos/left_front.jpeg"
+    },
+    {
+      "view": "right_front",
+      "fileName": "right_front.jpeg",
+      "originalName": "right_front.jpeg",
+      "mimeType": "image/jpeg",
+      "size": 661833,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/input_photos/right_front.jpeg"
+    },
+    {
+      "view": "back_left",
+      "fileName": "back_left.jpeg",
+      "originalName": "left_back.jpg",
+      "mimeType": "image/jpeg",
+      "size": 6398017,
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/input_photos/back_left.jpeg"
+    }
+  ],
+  "folders": {
+    "inputPhotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/input_photos",
+    "outputPhotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos",
+    "edited": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/edited",
+    "comparison": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/comparison",
+    "orthophotos": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/orthophotos",
+    "outputGlb": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_glb",
+    "logs": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/logs"
+  },
+  "modelProvider": "hyper3d",
+  "pipelineStatus": "completed",
+  "pipelineStartedAt": "2026-06-30T05:38:30.631Z",
+  "pipelineLogPath": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/logs/node_pipeline_2026-06-30T05-38-30-631Z.log",
+  "pipelineCommand": "/home/usuario/projects/phone_mapping_webapp_v1/.venv/bin/python /home/usuario/projects/phone_mapping_webapp_v1/python_services/run_extended_pipeline.py --project /home/usuario/projects/phone_mapping_webapp_v1/projects/project_10 --model-provider hyper3d",
+  "pipelineFinishedAt": "2026-06-30T05:56:53.624Z",
+  "pipelineExitCode": 0,
+  "humanScaleStatus": "completed",
+  "humanScaleDeletedAt": "2026-06-30T11:58:05.525Z",
+  "humanScaleOutputDir": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/orthophotos",
+  "humanScaleStartedAt": "2026-06-30T11:58:05.531Z",
+  "humanScaleLogPath": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/logs/human_scale_2026-06-30T11-58-05-531Z.log",
+  "humanScaleCommand": "/home/usuario/projects/phone_mapping_webapp_v1/.venv/bin/python /home/usuario/projects/phone_mapping_webapp_v1/python_services/create_human_scale.py --orthophotos-dir /home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/orthophotos",
+  "humanScaleFinishedAt": "2026-06-30T11:58:12.318Z",
+  "humanScaleExitCode": 0,
+  "referenceScaleStatus": "saved",
+  "referenceScaleSavedAt": "2026-06-30T14:26:35.761Z",
+  "referenceScaleOutputDir": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/orthophotos",
+  "projectTitle": "Rural_Home_Medellin_1 V1",
+  "projectTitleUpdatedAt": "2026-07-02T21:56:28.173Z",
+  "projectComments": "House case from Medellin used to test the Phone Mapping creation.\n",
+  "projectCommentsUpdatedAt": "2026-07-03T17:42:51.740Z"
+}

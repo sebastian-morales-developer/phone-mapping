@@ -1,0 +1,93 @@
+{
+  "input_dir": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/edited",
+  "direction": "webapp_counter_clockwise",
+  "angle_order": [
+    "front",
+    "front-left",
+    "left",
+    "back-left",
+    "back",
+    "back-right",
+    "right",
+    "front-right"
+  ],
+  "selected_images": [
+    {
+      "angle": "front",
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/edited/front_edited.png"
+    },
+    {
+      "angle": "front-left",
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/edited/left_front_edited.png"
+    },
+    {
+      "angle": "back-left",
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/edited/back_left_edited.png"
+    },
+    {
+      "angle": "right",
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/edited/right_edited.png"
+    },
+    {
+      "angle": "front-right",
+      "path": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_photos/edited/right_front_edited.png"
+    }
+  ],
+  "skipped_images": [],
+  "unknown_images": [],
+  "duplicate_images": {},
+  "request_fields": {
+    "tier": "Gen-2.5-High",
+    "mesh_mode": "Raw",
+    "geometry_file_format": "glb",
+    "material": "PBR",
+    "texture_mode": "high",
+    "geometry_instruct_mode": "creative",
+    "image_label": "[\"F\", \"FL\", \"BL\", \"R\", \"FR\"]",
+    "preview_render": "true",
+    "hd_texture": "false",
+    "texture_delight": "false",
+    "quality_override": "500000",
+    "prompt": "Create a coherent 3D model of one residential house or small building from the uploaded labeled views. Align facades, corners, walls, windows, doors, porch, garage volumes, chimneys, roof planes, and proportions into one consistent structure. Preserve the real geometry shown in the photos. The entire top of the building must be covered by roof geometry: do not leave holes, open voids, transparent gaps, or missing roof surfaces, even for flat or low-slope roofs. Infer continuous roof planes where views are incomplete. Avoid duplicate walls, extra buildings, distorted roofs, or mismatched openings."
+  },
+  "prompt": "Create a coherent 3D model of one residential house or small building from the uploaded labeled views. Align facades, corners, walls, windows, doors, porch, garage volumes, chimneys, roof planes, and proportions into one consistent structure. Preserve the real geometry shown in the photos. The entire top of the building must be covered by roof geometry: do not leave holes, open voids, transparent gaps, or missing roof surfaces, even for flat or low-slope roofs. Infer continuous roof planes where views are incomplete. Avoid duplicate walls, extra buildings, distorted roofs, or mismatched openings.",
+  "generation_response": {
+    "message": "Submitted. Please check progress via /api/v2/status and get download link via /api/v2/download",
+    "prompt": "Create a coherent 3D model of one residential house or small building from the uploaded labeled views. Align facades, corners, walls, windows, doors, porch, garage volumes, chimneys, roof planes, and proportions into one consistent structure. Preserve the real geometry shown in the photos. The entire top of the building must be covered by roof geometry: do not leave holes, open voids, transparent gaps, or missing roof surfaces, even for flat or low-slope roofs. Infer continuous roof planes where views are incomplete. Avoid duplicate walls, extra buildings, distorted roofs, or mismatched openings.",
+    "submit_time": "2026-06-30T05:49:12.135Z",
+    "uuid": "49d88446-8947-4896-ad55-40234b51fce1",
+    "jobs": {
+      "uuids": [
+        "5667ab13-284a-42ab-bf6f-39f01b6936f1",
+        "bf79cfda-e0b3-4b99-91ca-c29febee0c16",
+        "e7accf84-48f0-46e9-a2eb-0eb4201615d0",
+        "b51204b2-27a2-418f-a72e-0de3dee67034",
+        "ad903827-c6b1-4b73-aa17-6094662a2309",
+        "0432a9c1-7cad-4351-b808-c0d884af3548",
+        "3eeaa1df-8c8d-4c5a-9e17-57091bea6636"
+      ],
+      "subscription_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoxLCJqb2JJZHMiOlsiNTY2N2FiMTMtMjg0YS00MmFiLWJmNmYtMzlmMDFiNjkzNmYxIiwiYmY3OWNmZGEtZTBiMy00Yjk5LTkxY2EtYzI5ZmViZWUwYzE2IiwiZTdhY2NmODQtNDhmMC00NmU5LWEyZWItMGViNDIwMTYxNWQwIiwiYjUxMjA0YjItMjdhMi00MThmLWE3MmUtMGRlM2RlZTY3MDM0IiwiYWQ5MDM4MjctYzZiMS00YjczLWFhMTctNjA5NDY2MmEyMzA5IiwiMDQzMmE5YzEtN2NhZC00MzUxLWI4MDgtYzBkODg0YWYzNTQ4IiwiM2VlYWExZGYtOGM4ZC00YzVhLTllMTctNTcwOTFiZWE2NjM2Il0sImlhdCI6MTc4Mjc5ODU1Mn0.K0YrXTzanjDgnSu31j2D7v49j5BcPYDVw1z6WqqCZCU"
+    }
+  },
+  "download_response": {
+    "list": [
+      {
+        "url": "https://file.hyper3d.com/49d88446-8947-4896-ad55-40234b51fce1/pack/glb/base_basic_pbr.glb?response-cache-control=private&response-content-type=model%2Fgltf-binary&response-content-disposition=attachment%3B%20filename%3D%22base_basic_pbr.glb%22&X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Content-Sha256=UNSIGNED-PAYLOAD&X-Tos-Credential=AKLTYzE0MDRlNzUyNWMzNGE5N2JlZTQ5ZGRkZWQ2NWY5ZTA%2F20260630%2Ffile.hyper3d.com%2Ftos%2Frequest&X-Tos-Date=20260630T055607Z&X-Tos-Expires=604800&X-Tos-SignedHeaders=host&X-Tos-Signature=a4b5de411ab2ab1b46a4f0160f07a0cd415c337757c5d2f7bee95afb0da7864c",
+        "name": "base_basic_pbr.glb"
+      },
+      {
+        "url": "https://file.hyper3d.com/49d88446-8947-4896-ad55-40234b51fce1/model_generate/v1/preview.webp?response-cache-control=private&response-content-type=image%2Fwebp&response-content-disposition=attachment%3B%20filename%3D%22preview.webp%22&X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Content-Sha256=UNSIGNED-PAYLOAD&X-Tos-Credential=AKLTYzE0MDRlNzUyNWMzNGE5N2JlZTQ5ZGRkZWQ2NWY5ZTA%2F20260630%2Ffile.hyper3d.com%2Ftos%2Frequest&X-Tos-Date=20260630T055607Z&X-Tos-Expires=604800&X-Tos-SignedHeaders=host&X-Tos-Signature=a9801b15bce967aa85481a864d7254b7766ca846e9b68383ca70021e9a4decc8",
+        "name": "preview.webp"
+      },
+      {
+        "url": "https://file.hyper3d.com/49d88446-8947-4896-ad55-40234b51fce1/texture_refine/render.jpg?response-cache-control=private&response-content-type=image%2Fjpeg&response-content-disposition=attachment%3B%20filename%3D%22render.jpg%22&X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Content-Sha256=UNSIGNED-PAYLOAD&X-Tos-Credential=AKLTYzE0MDRlNzUyNWMzNGE5N2JlZTQ5ZGRkZWQ2NWY5ZTA%2F20260630%2Ffile.hyper3d.com%2Ftos%2Frequest&X-Tos-Date=20260630T055607Z&X-Tos-Expires=604800&X-Tos-SignedHeaders=host&X-Tos-Signature=1fb7100b9224634b2794ffca56a3a9e348c394faf21173acaf9c6f90aece6dc6",
+        "name": "render.jpg"
+      }
+    ]
+  },
+  "downloaded_files": [
+    "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_glb/base_basic_pbr.glb",
+    "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_glb/preview.webp",
+    "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_10/output_glb/render.jpg"
+  ]
+}

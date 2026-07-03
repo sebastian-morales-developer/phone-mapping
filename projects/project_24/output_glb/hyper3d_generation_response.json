@@ -1,0 +1,18 @@
+{
+  "message": "Submitted. Please check progress via /api/v2/status and get download link via /api/v2/download",
+  "prompt": "Create a coherent 3D model of one residential house or small building from the uploaded labeled views. Align facades, corners, walls, windows, doors, porch, garage volumes, chimneys, roof planes, and proportions into one consistent structure. Preserve the real geometry shown in the photos. The entire top of the building must be covered by roof geometry: do not leave holes, open voids, transparent gaps, or missing roof surfaces, even for flat or low-slope roofs. Infer continuous roof planes where views are incomplete. Avoid duplicate walls, extra buildings, distorted roofs, or mismatched openings.",
+  "submit_time": "2026-07-03T01:18:36.176Z",
+  "uuid": "b66c31de-5a14-499c-b7eb-24d2fd1bf410",
+  "jobs": {
+    "uuids": [
+      "d73e1ead-aef7-469b-8569-3ad9bad42e90",
+      "e5256117-9598-4d13-9865-fffea642cc8f",
+      "1ddd1ba3-50df-435e-85c6-ec97c34f1c5f",
+      "c60e3673-83ce-43fb-b235-682d88b4dfff",
+      "73d48260-ef2d-4c45-a948-f266f7229c0a",
+      "edf17308-fca3-4418-b1a2-ab5b4b714f5d",
+      "d1d9295a-cdfe-433c-b4f0-9dab9d626e08"
+    ],
+    "subscription_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoxLCJqb2JJZHMiOlsiZDczZTFlYWQtYWVmNy00NjliLTg1NjktM2FkOWJhZDQyZTkwIiwiZTUyNTYxMTctOTU5OC00ZDEzLTk4NjUtZmZmZWE2NDJjYzhmIiwiMWRkZDFiYTMtNTBkZi00MzVlLTg1YzYtZWM5N2MzNGYxYzVmIiwiYzYwZTM2NzMtODNjZS00M2ZiLWIyMzUtNjgyZDg4YjRkZmZmIiwiNzNkNDgyNjAtZWYyZC00YzQ1LWE5NDgtZjI2NmY3MjI5YzBhIiwiZWRmMTczMDgtZmNhMy00NDE4LWIxYTItYWI1YjRiNzE0ZjVkIiwiZDFkOTI5NWEtY2RmZS00MzNjLWI0ZjAtOWRhYjlkNjI2ZTA4Il0sImlhdCI6MTc4MzA0MTUxNn0.o4Nv8ju7spjS7dI1hpKuS37XGz9huRBRXkYnKZKMUxY"
+  }
+}
