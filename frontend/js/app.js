@@ -43,10 +43,12 @@ let statusFetchFailures = 0;
 let cameraStream = null;
 let compassListenerActive = false;
 let latestCompassReading = null;
+let displayedCompassReading = null;
 let frontPhotoCompassMetadata = null;
 const uploadPreviewUrls = new WeakMap();
 const acceptedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const HYPER3D_MAX_IMAGES = 5;
+const COMPASS_DISPLAY_STEP_DEGREES = 5;
 const FRONT_PREVIEW_EXTENSIONS = ['jpeg', 'jpg', 'png', 'webp'];
 const PIPELINE_STAGES = [
   {
@@ -523,6 +525,21 @@ function normalizeDegrees(value) {
   return ((degrees % 360) + 360) % 360;
 }
 
+function angularDistanceDegrees(a, b) {
+  const first = normalizeDegrees(a);
+  const second = normalizeDegrees(b);
+  if (first === null || second === null) return Infinity;
+  const delta = Math.abs(first - second);
+  return Math.min(delta, 360 - delta);
+}
+
+function formatHeadingForDisplay(degrees, label) {
+  const normalized = normalizeDegrees(degrees);
+  if (normalized === null) return 'Heading: unavailable';
+  const rounded = Math.round(normalized) % 360;
+  return `Heading: ${String(rounded).padStart(3, '0')}° ${label || directionLabelFromDegrees(rounded)}`;
+}
+
 function emptyCompassMetadata(reason = 'unavailable') {
   return {
     headingDegrees: null,
@@ -571,13 +588,21 @@ function handleCompassOrientation(event) {
   const reading = compassReadingFromEvent(event);
   if (!reading || reading.headingDegrees === null) return;
   latestCompassReading = reading;
-  const rounded = Math.round(reading.headingDegrees);
-  const suffix = reading.accuracy === 'approximate' ? '' : '';
-  setCompassBadge(`${rounded}° ${reading.headingLabel}${suffix}`, 'ready');
+
+  if (
+    displayedCompassReading
+    && angularDistanceDegrees(displayedCompassReading.headingDegrees, reading.headingDegrees) < COMPASS_DISPLAY_STEP_DEGREES
+  ) {
+    return;
+  }
+
+  displayedCompassReading = reading;
+  setCompassBadge(formatHeadingForDisplay(reading.headingDegrees, reading.headingLabel), 'ready');
 }
 
 async function startCompassAccess() {
   latestCompassReading = null;
+  displayedCompassReading = null;
   frontPhotoCompassMetadata = emptyCompassMetadata('not_captured');
   setCompassBadge('Compass starting...', 'muted');
 
@@ -619,7 +644,8 @@ function stopCompassAccess() {
 
 function capturedCompassMetadata() {
   const capturedAt = new Date().toISOString();
-  if (!latestCompassReading || latestCompassReading.headingDegrees === null) {
+  const reading = displayedCompassReading || latestCompassReading;
+  if (!reading || reading.headingDegrees === null) {
     return {
       ...emptyCompassMetadata(frontPhotoCompassMetadata?.reason || 'no_heading_reading'),
       capturedAt,
@@ -627,8 +653,8 @@ function capturedCompassMetadata() {
   }
 
   return {
-    ...latestCompassReading,
-    headingDegrees: Number(latestCompassReading.headingDegrees.toFixed(2)),
+    ...reading,
+    headingDegrees: Number(reading.headingDegrees.toFixed(2)),
     capturedAt,
   };
 }
