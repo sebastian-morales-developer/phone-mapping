@@ -25,10 +25,26 @@ const imageInputs = Array.from(form.querySelectorAll('input[type="file"]:not([na
 const modeInputs = Array.from(form.querySelectorAll('input[name="production_mode"]'));
 const providerInputs = Array.from(form.querySelectorAll('input[name="model_provider"]'));
 const providerExtraTiles = Array.from(form.querySelectorAll('[data-provider-only]'));
+const frontInput = form.querySelector('input[name="front"]');
+const frontPhotoActionMenu = document.querySelector('#frontPhotoActionMenu');
+const cameraFallbackInput = document.querySelector('#cameraFallbackInput');
+const cameraModal = document.querySelector('#cameraModal');
+const cameraPreview = document.querySelector('#cameraPreview');
+const cameraCanvas = document.querySelector('#cameraCanvas');
+const cameraCompassBadge = document.querySelector('#cameraCompassBadge');
+const cameraStatus = document.querySelector('#cameraStatus');
+const cameraCloseButton = document.querySelector('#cameraCloseButton');
+const cameraCaptureButton = document.querySelector('#cameraCaptureButton');
+const cameraFallbackButton = document.querySelector('#cameraFallbackButton');
 let activeProject = null;
 let activeBatch = null;
 let statusTimer = null;
 let statusFetchFailures = 0;
+let cameraStream = null;
+let compassListenerActive = false;
+let latestCompassReading = null;
+let frontPhotoCompassMetadata = null;
+const uploadPreviewUrls = new WeakMap();
 const acceptedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const HYPER3D_MAX_IMAGES = 5;
 const FRONT_PREVIEW_EXTENSIONS = ['jpeg', 'jpg', 'png', 'webp'];
@@ -249,6 +265,39 @@ function selectedFiles() {
   return imageInputs.filter((input) => isInputActive(input) && input.files && input.files.length > 0);
 }
 
+function shouldRenderUploadPreview(input) {
+  return input?.files?.length
+    && currentProductionMode() === 'individual'
+    && currentProvider() === 'hyper3d'
+    && isInputActive(input);
+}
+
+function clearUploadPreview(input) {
+  const tile = input.closest('.upload-tile');
+  const existingUrl = uploadPreviewUrls.get(input);
+  if (existingUrl) {
+    URL.revokeObjectURL(existingUrl);
+    uploadPreviewUrls.delete(input);
+  }
+  tile.classList.remove('has-image-preview');
+  tile.querySelector('.upload-image-preview')?.remove();
+}
+
+function renderUploadPreview(input, file) {
+  const tile = input.closest('.upload-tile');
+  clearUploadPreview(input);
+
+  const preview = document.createElement('img');
+  const previewUrl = URL.createObjectURL(file);
+  preview.className = 'upload-image-preview';
+  preview.src = previewUrl;
+  preview.alt = `${input.name.replaceAll('_', ' ')} preview`;
+  preview.loading = 'lazy';
+  uploadPreviewUrls.set(input, previewUrl);
+  tile.prepend(preview);
+  tile.classList.add('has-image-preview');
+}
+
 function updateFileState(input) {
   const tile = input.closest('.upload-tile');
   const state = document.querySelector(`[data-state-for="${input.name}"]`);
@@ -256,8 +305,15 @@ function updateFileState(input) {
 
   tile.classList.toggle('is-filled', Boolean(file));
   if (!file) {
+    clearUploadPreview(input);
     state.textContent = input.required ? 'Required' : 'Optional';
     return;
+  }
+
+  if (shouldRenderUploadPreview(input)) {
+    renderUploadPreview(input, file);
+  } else {
+    clearUploadPreview(input);
   }
 
   const sizeMb = file.size / 1024 / 1024;
@@ -304,6 +360,8 @@ function clearInput(input) {
 }
 
 function updateProviderFields() {
+  hideFrontPhotoMenu();
+  if (!shouldUseFrontPhotoMenu(frontInput)) closeCameraModal();
   const provider = currentProvider();
   for (const tile of providerExtraTiles) {
     const isVisible = tile.dataset.providerOnly === provider;
@@ -313,6 +371,9 @@ function updateProviderFields() {
       if (input) clearInput(input);
     }
   }
+  imageInputs.forEach((input) => {
+    if (isInputActive(input)) updateFileState(input);
+  });
   updateFormHint();
 }
 
@@ -333,6 +394,8 @@ function updateBatchZipState() {
 }
 
 function updateProductionModeFields() {
+  hideFrontPhotoMenu();
+  if (!shouldUseFrontPhotoMenu(frontInput)) closeCameraModal();
   const mode = currentProductionMode();
   const isBatch = mode !== 'individual';
   const isTwoModelsBatch = mode === 'batch_two_models';
@@ -391,6 +454,10 @@ function assignDroppedFile(input, file) {
     return;
   }
 
+  if (input === frontInput) {
+    clearFrontCompassMetadata('manual_file_selection');
+  }
+
   const transfer = new DataTransfer();
   transfer.items.add(file);
   input.files = transfer.files;
@@ -410,8 +477,269 @@ function assignDroppedZip(file) {
   updateFormHint();
 }
 
+function shouldUseFrontPhotoMenu(input) {
+  return input?.name === 'front'
+    && currentProductionMode() === 'individual'
+    && currentProvider() === 'hyper3d';
+}
+
+function hideFrontPhotoMenu() {
+  if (!frontPhotoActionMenu) return;
+  frontPhotoActionMenu.classList.add('is-hidden');
+}
+
+function showFrontPhotoMenu(anchor) {
+  if (!frontPhotoActionMenu || !anchor) return;
+  const rect = anchor.getBoundingClientRect();
+  const menuWidth = 260;
+  const left = Math.min(window.innerWidth - menuWidth - 12, Math.max(12, rect.left));
+  const top = Math.min(window.innerHeight - 104, rect.bottom + 8);
+  frontPhotoActionMenu.style.left = `${left}px`;
+  frontPhotoActionMenu.style.top = `${Math.max(12, top)}px`;
+  frontPhotoActionMenu.classList.remove('is-hidden');
+}
+
+function openFrontFilePicker() {
+  hideFrontPhotoMenu();
+  if (!frontInput) return;
+  frontInput.click();
+}
+
+function setCameraStatus(message, type = 'neutral') {
+  if (!cameraStatus) return;
+  cameraStatus.textContent = message;
+  cameraStatus.classList.toggle('is-error', type === 'error');
+}
+
+function directionLabelFromDegrees(degrees) {
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const index = Math.round(normalizeDegrees(degrees) / 45) % directions.length;
+  return directions[index];
+}
+
+function normalizeDegrees(value) {
+  const degrees = Number(value);
+  if (!Number.isFinite(degrees)) return null;
+  return ((degrees % 360) + 360) % 360;
+}
+
+function emptyCompassMetadata(reason = 'unavailable') {
+  return {
+    headingDegrees: null,
+    headingLabel: null,
+    source: null,
+    accuracy: 'unavailable',
+    capturedAt: null,
+    reason,
+  };
+}
+
+function setCompassBadge(message, type = 'muted') {
+  if (!cameraCompassBadge) return;
+  cameraCompassBadge.textContent = message;
+  cameraCompassBadge.classList.toggle('is-muted', type === 'muted');
+  cameraCompassBadge.classList.toggle('is-error', type === 'error');
+}
+
+function compassReadingFromEvent(event) {
+  const webkitHeading = normalizeDegrees(event.webkitCompassHeading);
+  if (webkitHeading !== null) {
+    return {
+      headingDegrees: webkitHeading,
+      headingLabel: directionLabelFromDegrees(webkitHeading),
+      source: 'webkitCompassHeading',
+      accuracy: 'device',
+      capturedAt: null,
+      reason: null,
+    };
+  }
+
+  const alpha = normalizeDegrees(event.alpha);
+  if (alpha === null) return null;
+  const heading = normalizeDegrees(360 - alpha);
+  return {
+    headingDegrees: heading,
+    headingLabel: directionLabelFromDegrees(heading),
+    source: event.type === 'deviceorientationabsolute' || event.absolute ? 'deviceorientationabsolute.alpha' : 'deviceorientation.alpha',
+    accuracy: event.absolute || event.type === 'deviceorientationabsolute' ? 'device' : 'approximate',
+    capturedAt: null,
+    reason: event.absolute || event.type === 'deviceorientationabsolute' ? null : 'relative_orientation_fallback',
+  };
+}
+
+function handleCompassOrientation(event) {
+  const reading = compassReadingFromEvent(event);
+  if (!reading || reading.headingDegrees === null) return;
+  latestCompassReading = reading;
+  const rounded = Math.round(reading.headingDegrees);
+  const suffix = reading.accuracy === 'approximate' ? ' approx.' : '';
+  setCompassBadge(`Heading ${rounded}° ${reading.headingLabel}${suffix}`, 'ready');
+}
+
+async function startCompassAccess() {
+  latestCompassReading = null;
+  frontPhotoCompassMetadata = emptyCompassMetadata('not_captured');
+  setCompassBadge('Compass starting...', 'muted');
+
+  if (typeof window.DeviceOrientationEvent === 'undefined') {
+    setCompassBadge('Compass unavailable', 'muted');
+    frontPhotoCompassMetadata = emptyCompassMetadata('device_orientation_not_supported');
+    return;
+  }
+
+  try {
+    if (typeof window.DeviceOrientationEvent.requestPermission === 'function') {
+      const permission = await window.DeviceOrientationEvent.requestPermission();
+      if (permission !== 'granted') {
+        setCompassBadge('Compass permission denied', 'error');
+        frontPhotoCompassMetadata = emptyCompassMetadata('permission_denied');
+        return;
+      }
+    }
+
+    if (!compassListenerActive) {
+      window.addEventListener('deviceorientationabsolute', handleCompassOrientation, true);
+      window.addEventListener('deviceorientation', handleCompassOrientation, true);
+      compassListenerActive = true;
+    }
+
+    setCompassBadge('Compass waiting...', 'muted');
+  } catch (error) {
+    setCompassBadge('Compass unavailable', 'muted');
+    frontPhotoCompassMetadata = emptyCompassMetadata(error.message || 'permission_error');
+  }
+}
+
+function stopCompassAccess() {
+  if (!compassListenerActive) return;
+  window.removeEventListener('deviceorientationabsolute', handleCompassOrientation, true);
+  window.removeEventListener('deviceorientation', handleCompassOrientation, true);
+  compassListenerActive = false;
+}
+
+function capturedCompassMetadata() {
+  const capturedAt = new Date().toISOString();
+  if (!latestCompassReading || latestCompassReading.headingDegrees === null) {
+    return {
+      ...emptyCompassMetadata(frontPhotoCompassMetadata?.reason || 'no_heading_reading'),
+      capturedAt,
+    };
+  }
+
+  return {
+    ...latestCompassReading,
+    headingDegrees: Number(latestCompassReading.headingDegrees.toFixed(2)),
+    capturedAt,
+  };
+}
+
+function clearFrontCompassMetadata(reason = 'manual_file_selection') {
+  frontPhotoCompassMetadata = emptyCompassMetadata(reason);
+}
+
+function stopCameraStream() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach((track) => track.stop());
+    cameraStream = null;
+  }
+  if (cameraPreview) {
+    cameraPreview.srcObject = null;
+  }
+}
+
+function closeCameraModal() {
+  stopCameraStream();
+  stopCompassAccess();
+  if (cameraModal) {
+    cameraModal.classList.add('is-hidden');
+  }
+  setCameraStatus('Camera is not active.');
+  setCompassBadge('Compass unavailable', 'muted');
+}
+
+function openCameraFallback() {
+  hideFrontPhotoMenu();
+  if (cameraFallbackInput) {
+    cameraFallbackInput.value = '';
+    cameraFallbackInput.click();
+    return;
+  }
+  openFrontFilePicker();
+}
+
+async function openCameraModal() {
+  hideFrontPhotoMenu();
+  if (!cameraModal || !cameraPreview || !navigator.mediaDevices?.getUserMedia) {
+    setStatus('Camera API is not available. Opening device file picker fallback.', 'neutral');
+    openCameraFallback();
+    return;
+  }
+
+  cameraModal.classList.remove('is-hidden');
+  setCameraStatus('Requesting camera access...');
+  await startCompassAccess();
+
+  try {
+    stopCameraStream();
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+      },
+    });
+    cameraPreview.srcObject = cameraStream;
+    await cameraPreview.play();
+    setCameraStatus('Camera ready. Frame the front view and capture.');
+  } catch (error) {
+    closeCameraModal();
+    setStatus(`Camera could not be opened: ${error.message}. Opening file picker fallback.`, 'error');
+    openCameraFallback();
+  }
+}
+
+async function captureFrontPhoto() {
+  if (!frontInput || !cameraPreview || !cameraCanvas) return;
+  if (!cameraPreview.videoWidth || !cameraPreview.videoHeight) {
+    setCameraStatus('Camera is not ready yet.', 'error');
+    return;
+  }
+
+  cameraCanvas.width = cameraPreview.videoWidth;
+  cameraCanvas.height = cameraPreview.videoHeight;
+  const context = cameraCanvas.getContext('2d');
+  context.drawImage(cameraPreview, 0, 0, cameraCanvas.width, cameraCanvas.height);
+
+  const blob = await new Promise((resolve) => {
+    cameraCanvas.toBlob(resolve, 'image/jpeg', 0.92);
+  });
+
+  if (!blob) {
+    setCameraStatus('Could not capture the photo. Try again or use the file picker.', 'error');
+    return;
+  }
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const file = new File([blob], `front_camera_${timestamp}.jpg`, { type: 'image/jpeg' });
+  assignDroppedFile(frontInput, file);
+  frontPhotoCompassMetadata = capturedCompassMetadata();
+  closeCameraModal();
+  const headingText = frontPhotoCompassMetadata.headingDegrees === null
+    ? 'Compass heading unavailable; saved as null.'
+    : `Compass heading saved: ${Math.round(frontPhotoCompassMetadata.headingDegrees)}° ${frontPhotoCompassMetadata.headingLabel}.`;
+  setStatus(`Front photo captured and ready.\n${headingText}`, 'success');
+}
+
 function bindDropZone(input) {
   const tile = input.closest('.upload-tile');
+
+  tile.addEventListener('click', (event) => {
+    if (event.target === input || !shouldUseFrontPhotoMenu(input)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    showFrontPhotoMenu(tile);
+  });
 
   ['dragenter', 'dragover'].forEach((eventName) => {
     tile.addEventListener(eventName, (event) => {
@@ -735,6 +1063,7 @@ async function submitProject(event) {
   const selected = selectedFiles();
   formData.append('model_provider', provider);
   formData.append('projectTitle', projectTitleInput ? projectTitleInput.value : '');
+  formData.append('frontCompassMetadata', JSON.stringify(frontPhotoCompassMetadata || emptyCompassMetadata('not_captured')));
   for (const input of imageInputs) {
     if (!isInputActive(input)) continue;
     if (input.files && input.files[0]) {
@@ -775,6 +1104,7 @@ async function submitProject(event) {
       'success',
     );
     form.reset();
+    clearFrontCompassMetadata('form_reset');
     imageInputs.forEach(updateFileState);
     updateProviderFields();
     updateFormHint();
@@ -851,6 +1181,9 @@ async function submitBatch() {
 
 imageInputs.forEach((input) => {
   input.addEventListener('change', () => {
+    if (input === frontInput) {
+      clearFrontCompassMetadata('manual_file_selection');
+    }
     updateFileState(input);
     updateFormHint();
   });
@@ -876,10 +1209,69 @@ if (batchZipInput) {
   bindBatchDropZone();
 }
 
+if (frontPhotoActionMenu) {
+  frontPhotoActionMenu.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-front-photo-action]');
+    if (!button) return;
+    const action = button.dataset.frontPhotoAction;
+    if (action === 'upload') {
+      openFrontFilePicker();
+      return;
+    }
+    if (action === 'camera') {
+      openCameraModal();
+    }
+  });
+}
+
+if (cameraFallbackInput) {
+  cameraFallbackInput.addEventListener('change', () => {
+    const file = cameraFallbackInput.files && cameraFallbackInput.files[0];
+    if (!file || !frontInput) return;
+    assignDroppedFile(frontInput, file);
+    clearFrontCompassMetadata('camera_fallback_file_picker');
+    setStatus('Front photo selected from camera/file picker and ready.', 'success');
+  });
+}
+
+if (cameraCloseButton) {
+  cameraCloseButton.addEventListener('click', closeCameraModal);
+}
+
+if (cameraFallbackButton) {
+  cameraFallbackButton.addEventListener('click', () => {
+    closeCameraModal();
+    openCameraFallback();
+  });
+}
+
+if (cameraCaptureButton) {
+  cameraCaptureButton.addEventListener('click', captureFrontPhoto);
+}
+
+document.addEventListener('click', (event) => {
+  if (!frontPhotoActionMenu || frontPhotoActionMenu.classList.contains('is-hidden')) return;
+  if (frontPhotoActionMenu.contains(event.target)) return;
+  if (event.target.closest('.angle-front')) return;
+  hideFrontPhotoMenu();
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  hideFrontPhotoMenu();
+  if (cameraModal && !cameraModal.classList.contains('is-hidden')) {
+    closeCameraModal();
+  }
+});
+
 form.addEventListener('submit', submitProject);
 refreshProjects.addEventListener('click', loadProjects);
 exportProjectComments.addEventListener('click', exportCommentsJson);
 window.addEventListener('resize', syncProjectsPanelHeight);
+window.addEventListener('beforeunload', () => {
+  stopCameraStream();
+  stopCompassAccess();
+});
 
 checkHealth();
 loadProjects();

@@ -249,6 +249,37 @@
       </section>
     </main>
 
+    <div id="frontPhotoActionMenu" class="front-photo-menu is-hidden" role="menu" aria-label="Front photo source">
+      <button type="button" data-front-photo-action="upload">Upload from device</button>
+      <button type="button" data-front-photo-action="camera">Take photo with camera</button>
+    </div>
+
+    <input id="cameraFallbackInput" class="sr-only" type="file" accept="image/*" capture="environment" />
+
+    <div id="cameraModal" class="camera-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="cameraModalTitle">
+      <div class="camera-modal-card">
+        <div class="camera-modal-header">
+          <div>
+            <span class="photo-map-eyebrow">Front photo</span>
+            <h2 id="cameraModalTitle">Take photo with camera</h2>
+          </div>
+          <button id="cameraCloseButton" type="button" class="camera-secondary-button">Close</button>
+        </div>
+
+        <div class="camera-preview-frame">
+          <video id="cameraPreview" class="camera-preview" autoplay playsinline muted></video>
+          <div id="cameraCompassBadge" class="camera-compass-badge">Compass unavailable</div>
+        </div>
+        <canvas id="cameraCanvas" class="is-hidden"></canvas>
+        <p id="cameraStatus" class="camera-status">Camera is not active.</p>
+
+        <div class="camera-actions">
+          <button id="cameraFallbackButton" type="button" class="camera-secondary-button">Use file picker</button>
+          <button id="cameraCaptureButton" type="button" class="camera-primary-button">Capture photo</button>
+        </div>
+      </div>
+    </div>
+
     <script src="/js/app.js"></script>
   </body>
 </html>

@@ -547,6 +547,36 @@ function normalizeProjectComments(value) {
   return String(value ?? '').replace(/\r\n/g, '\n').slice(0, 5000);
 }
 
+function normalizeNullableNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function normalizeFrontCompassMetadata(value) {
+  let payload = value;
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      payload = JSON.parse(value);
+    } catch (_error) {
+      payload = { reason: 'invalid_json_metadata' };
+    }
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    payload = {};
+  }
+
+  const headingDegrees = normalizeNullableNumber(payload.headingDegrees);
+  return {
+    headingDegrees,
+    headingLabel: headingDegrees === null ? null : String(payload.headingLabel || '').trim().slice(0, 12) || null,
+    source: headingDegrees === null ? null : String(payload.source || '').trim().slice(0, 80) || null,
+    accuracy: String(payload.accuracy || 'unavailable').trim().slice(0, 40) || 'unavailable',
+    capturedAt: String(payload.capturedAt || '').trim().slice(0, 40) || null,
+    reason: headingDegrees === null ? String(payload.reason || 'unavailable').trim().slice(0, 120) || 'unavailable' : null,
+  };
+}
+
 async function readProjectManifest(projectName) {
   if (!validProjectName(projectName)) {
     throw new Error('Invalid project name.');
@@ -2804,6 +2834,7 @@ app.post('/api/projects', upload.any(), async (req, res, next) => {
       ? req.body.model_provider
       : 'tencent';
     const projectTitle = normalizeProjectTitle(req.body.projectTitle ?? req.body.project_title ?? '');
+    const frontCompassMetadata = normalizeFrontCompassMetadata(req.body.frontCompassMetadata);
     const fileMap = filesByField(req.files);
     const missing = validateRequiredUploads(fileMap);
     if (missing.length) {
@@ -2832,6 +2863,11 @@ app.post('/api/projects', upload.any(), async (req, res, next) => {
       createdAt: new Date().toISOString(),
       uploadedImages,
       savedImages,
+      inputPhotoMetadata: {
+        front: {
+          compass: frontCompassMetadata,
+        },
+      },
       folders,
       modelProvider,
       projectTitle,
