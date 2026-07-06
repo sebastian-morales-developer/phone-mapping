@@ -533,11 +533,11 @@ function angularDistanceDegrees(a, b) {
   return Math.min(delta, 360 - delta);
 }
 
-function formatHeadingForDisplay(degrees, label) {
+function formatHeadingForDisplay(degrees) {
   const normalized = normalizeDegrees(degrees);
   if (normalized === null) return 'Heading: unavailable';
-  const rounded = Math.round(normalized) % 360;
-  return `Heading: ${String(rounded).padStart(3, '0')}° ${label || directionLabelFromDegrees(rounded)}`;
+  const rounded = Math.round(normalized);
+  return `Heading: ${String(rounded).padStart(3, '0')}° N`;
 }
 
 function emptyCompassMetadata(reason = 'unavailable') {
@@ -597,7 +597,7 @@ function handleCompassOrientation(event) {
   }
 
   displayedCompassReading = reading;
-  setCompassBadge(formatHeadingForDisplay(reading.headingDegrees, reading.headingLabel), 'ready');
+  setCompassBadge(formatHeadingForDisplay(reading.headingDegrees), 'ready');
 }
 
 async function startCompassAccess() {
