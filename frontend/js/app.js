@@ -572,8 +572,8 @@ function handleCompassOrientation(event) {
   if (!reading || reading.headingDegrees === null) return;
   latestCompassReading = reading;
   const rounded = Math.round(reading.headingDegrees);
-  const suffix = reading.accuracy === 'approximate' ? ' approx.' : '';
-  setCompassBadge(`Heading ${rounded}° ${reading.headingLabel}${suffix}`, 'ready');
+  const suffix = reading.accuracy === 'approximate' ? '' : '';
+  setCompassBadge(`${rounded}° ${reading.headingLabel}${suffix}`, 'ready');
 }
 
 async function startCompassAccess() {
