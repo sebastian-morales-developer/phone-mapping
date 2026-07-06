@@ -472,9 +472,9 @@ def main(default_model: str = "3.0") -> int:
         print("Dry run only. No API request was sent.")
         return 0
 
-    api_key = os.getenv("3DAISTUDIO_API_KEY")
+    api_key = os.getenv("API_KEY_3DAISTUDIO")
     if not api_key:
-        print("Missing 3DAISTUDIO_API_KEY in environment or .env.", file=sys.stderr)
+        print("Missing API_KEY_3DAISTUDIO in environment or .env.", file=sys.stderr)
         return 1
 
     output_dir.mkdir(parents=True, exist_ok=True)

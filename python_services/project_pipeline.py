@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
 import time
 from datetime import datetime
@@ -19,6 +20,7 @@ from openai import OpenAI
 
 SERVICE_DIR = Path(__file__).resolve().parent
 APP_DIR = SERVICE_DIR.parent
+load_dotenv(APP_DIR / ".env", override=True)
 if str(SERVICE_DIR) not in sys.path:
     sys.path.insert(0, str(SERVICE_DIR))
 
@@ -39,7 +41,19 @@ from tencent_hunyuan_3d import (
 )
 
 
-DEFAULT_PROJECT = APP_DIR / "projects" / "project_1"
+def resolve_projects_root() -> Path:
+    raw_path = os.getenv("PROJECTS_PATH", "projects").strip().strip('"').strip("'")
+    if not raw_path:
+        raw_path = "projects"
+
+    projects_path = Path(raw_path).expanduser()
+    if projects_path.is_absolute():
+        return projects_path
+    return (APP_DIR / projects_path).resolve()
+
+
+PROJECTS_ROOT = resolve_projects_root()
+DEFAULT_PROJECT = PROJECTS_ROOT / "project_1"
 DEFAULT_IMAGE_MODEL = "gpt-image-2"
 DEFAULT_IMAGE_SIZE = "1536x1024"
 DEFAULT_IMAGE_QUALITY = "high"
@@ -191,9 +205,13 @@ def resolve_project(project: Path) -> Path:
     if project.is_absolute():
         return project
 
+    project_text = str(project).replace("\\", "/")
+    if project_text.startswith("project_") and "/" not in project_text:
+        return (PROJECTS_ROOT / project).resolve()
+
     app_relative = APP_DIR / project
-    if app_relative.exists() or str(project).startswith("projects"):
-        return app_relative
+    if app_relative.exists() or project_text.startswith("projects/"):
+        return app_relative.resolve()
 
     return (Path.cwd() / project).resolve()
 
@@ -267,6 +285,34 @@ def write_json(path: Path, data: dict[str, Any]) -> None:
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
+def read_project_manifest(project_dir: Path) -> dict[str, Any]:
+    manifest_path = project_dir / "project_manifest.json"
+    try:
+        return json.loads(manifest_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+
+
+def manifest_requests_photo_edit_skip(manifest: dict[str, Any]) -> bool:
+    return bool(
+        manifest.get("skipPhotoEdit")
+        or manifest.get("rawHyper3dImagesOnly")
+        or manifest.get("batchMode") == "hyper3d_raw"
+        or manifest.get("source") == "batch_hyper3d_raw"
+    )
+
+
+def seed_raw_images_as_edited(input_images: list[Path], folders: dict[str, Path]) -> list[Path]:
+    folders["edited"].mkdir(parents=True, exist_ok=True)
+    seeded_paths = []
+    for input_path in input_images:
+        target_path = folders["edited"] / f"{input_path.stem}_edited{input_path.suffix.lower()}"
+        if not target_path.is_file():
+            shutil.copy2(input_path, target_path)
+        seeded_paths.append(target_path)
+    return seeded_paths
+
+
 def expected_photo_outputs(
     input_images: list[Path],
     folders: dict[str, Path],
@@ -305,11 +351,35 @@ def edit_project_photos(
 ) -> list[Path]:
     input_images = image_files(folders["input"])
     edited_paths: list[Path] = []
+    skip_photo_edit = bool(args.skip_photo_edit)
 
-    print("\n=== Step 1/2: Photo Editing ===", flush=True)
+    print(
+        "\n=== Step 1/2: Raw Image Preparation ===" if skip_photo_edit else "\n=== Step 1/2: Photo Editing ===",
+        flush=True,
+    )
     print(f"Input folder: {folders['input']}", flush=True)
     print(f"Edited output folder: {folders['edited']}", flush=True)
     print(f"Comparison output folder: {folders['comparison']}", flush=True)
+
+    if not input_images:
+        raise RuntimeError(f"No input images found in {folders['input']}")
+
+    if skip_photo_edit:
+        existing = image_files(folders["edited"])
+        print("OpenAI photo editing is disabled for this project.", flush=True)
+        print(f"Images found: {len(input_images)}", flush=True)
+        print(f"Existing raw/edited images found: {len(existing)}", flush=True)
+        print("Images requiring OpenAI edit: 0", flush=True)
+        print("Estimated OpenAI edit cost: $0.000", flush=True)
+        if existing:
+            print("Using existing raw images from output_photos/edited.", flush=True)
+            return existing
+        seeded = seed_raw_images_as_edited(input_images, folders)
+        print(f"Seeded raw images into output_photos/edited: {len(seeded)}", flush=True)
+        for path in seeded:
+            print(f"Raw image ready: {path}", flush=True)
+        return seeded
+
     existing_output_pairs = [
         (input_path, edited_path, comparison_path)
         for input_path, edited_path, comparison_path in expected_photo_outputs(
@@ -334,9 +404,6 @@ def edit_project_photos(
     print(f"Images requiring OpenAI edit: {len(pending_output_pairs)}", flush=True)
     print(f"Estimated OpenAI edit cost: {estimated_edit_cost(len(pending_output_pairs))}", flush=True)
 
-    if not input_images:
-        raise RuntimeError(f"No input images found in {folders['input']}")
-
     outputs_complete, existing_edited_paths, missing_outputs = completed_photo_outputs(
         input_images,
         folders,
@@ -350,13 +417,6 @@ def edit_project_photos(
         print(f"Existing edited images: {len(existing_edited_paths)}", flush=True)
         print(f"Existing comparisons: {len(input_images)}", flush=True)
         return existing_edited_paths
-
-    if args.skip_photo_edit:
-        existing = image_files(folders["edited"])
-        print(f"Skipping photo editing. Existing edited images found: {len(existing)}", flush=True)
-        if not existing:
-            raise RuntimeError(f"No edited images found in {folders['edited']}")
-        return existing
 
     if args.dry_run:
         if missing_outputs:
@@ -505,9 +565,9 @@ def generate_tencent_3d_model(
     payload = build_payload(hunyuan_args, ordered_images)
     write_manifest(glb_output_dir, edited_dir, ordered_images, unknown_images, duplicates, payload)
 
-    api_key = os.getenv("3DAISTUDIO_API_KEY")
+    api_key = os.getenv("API_KEY_3DAISTUDIO")
     if not api_key:
-        raise RuntimeError(f"Missing 3DAISTUDIO_API_KEY in {APP_DIR / '.env'}.")
+        raise RuntimeError(f"Missing API_KEY_3DAISTUDIO in {APP_DIR / '.env'}.")
 
     step_started = time.monotonic()
     submit_response = submit_generation_with_log(api_key, payload, glb_output_dir)
@@ -752,6 +812,9 @@ def run_pipeline(args: argparse.Namespace) -> int:
     load_dotenv(APP_DIR / ".env")
     project_dir = resolve_project(args.project)
     folders = ensure_project_folders(project_dir)
+    manifest = read_project_manifest(project_dir)
+    if manifest_requests_photo_edit_skip(manifest):
+        args.skip_photo_edit = True
     current_run = args.run_id
     pipeline_started = time.monotonic()
 
@@ -767,6 +830,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
     print(f"Environment file: {APP_DIR / '.env'}", flush=True)
     print(f"3D model provider: {args.model_provider}", flush=True)
     print(f"Dry run: {args.dry_run}", flush=True)
+    print(f"Skip OpenAI photo editing: {args.skip_photo_edit}", flush=True)
 
     summary: dict[str, Any] = {
         "run_id": current_run,

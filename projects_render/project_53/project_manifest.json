@@ -133,7 +133,5 @@
   "pipelineLogPath": "/home/usuario/projects/phone_mapping_webapp_v1/projects/project_53/logs/node_pipeline_2026-07-03T15-56-51-493Z.log",
   "pipelineCommand": "/home/usuario/projects/phone_mapping_webapp_v1/.venv/bin/python /home/usuario/projects/phone_mapping_webapp_v1/python_services/run_extended_pipeline.py --project /home/usuario/projects/phone_mapping_webapp_v1/projects/project_53 --model-provider hyper3d",
   "pipelineFinishedAt": "2026-07-03T16:05:23.597Z",
-  "pipelineExitCode": 0,
-  "projectComments": "ghgjgjhgjhgjhghjgjhgjlkjljkjlk",
-  "projectCommentsUpdatedAt": "2026-07-03T21:48:02.392Z"
+  "pipelineExitCode": 0
 }

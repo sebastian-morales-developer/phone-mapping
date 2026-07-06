@@ -17,6 +17,7 @@ const batchZipInput = form.querySelector('input[name="batch_zip"]');
 const batchZipState = document.querySelector('#batchZipState');
 const batchConfiguredContract = document.querySelector('#batchConfiguredContract');
 const batchTwoModelsContract = document.querySelector('#batchTwoModelsContract');
+const batchHyper3dRawContract = document.querySelector('#batchHyper3dRawContract');
 const projectsPanel = document.querySelector('#projectsPanel');
 const projectSubmitRow = document.querySelector('#projectSubmitRow');
 
@@ -43,10 +44,12 @@ const PIPELINE_STAGES = [
       'Batch created',
       'Batch started',
       'Batch two-models started',
+      'Batch Hyper3D raw started',
       'Detecting images',
       'Tencent orientation check',
       'OpenAI Hyper3D selection started',
       'Hyper3D selection method=',
+      'Hyper3D raw selection method=',
     ],
   },
   {
@@ -271,8 +274,10 @@ function updateFormHint() {
 
   const count = selectedFiles().length;
   if (currentProvider() === 'hyper3d') {
-    formHint.textContent = `${count} image${count === 1 ? '' : 's'} selected · Hyper3D max ${HYPER3D_MAX_IMAGES}`;
-    formHint.classList.toggle('text-red-300', count > HYPER3D_MAX_IMAGES);
+    formHint.textContent = count > HYPER3D_MAX_IMAGES
+      ? `${count} images selected · Hyper3D will auto-select best ${HYPER3D_MAX_IMAGES}`
+      : `${count} image${count === 1 ? '' : 's'} selected · Hyper3D uses up to ${HYPER3D_MAX_IMAGES}`;
+    formHint.classList.remove('text-red-300');
     return;
   }
   formHint.textContent = `${count} image${count === 1 ? '' : 's'} selected`;
@@ -317,7 +322,8 @@ function updateBatchZipState() {
   const file = batchZipInput.files && batchZipInput.files[0];
   tile.classList.toggle('is-filled', Boolean(file));
   if (!file) {
-    batchZipState.textContent = currentProductionMode() === 'batch_two_models'
+    const mode = currentProductionMode();
+    batchZipState.textContent = mode === 'batch_two_models' || mode === 'batch_hyper3d_raw'
       ? 'Required. Each subfolder only needs named images; no JSON is required.'
       : 'Required. Each subfolder must include phone_mapping_project.json and named images.';
     return;
@@ -330,6 +336,7 @@ function updateProductionModeFields() {
   const mode = currentProductionMode();
   const isBatch = mode !== 'individual';
   const isTwoModelsBatch = mode === 'batch_two_models';
+  const isHyper3dRawBatch = mode === 'batch_hyper3d_raw';
   individualPanel.hidden = isBatch;
   individualPanel.style.display = isBatch ? 'none' : '';
   batchPanel.hidden = !isBatch;
@@ -350,18 +357,24 @@ function updateProductionModeFields() {
     batchZipInput.disabled = !isBatch;
   }
   if (batchConfiguredContract) {
-    batchConfiguredContract.hidden = isTwoModelsBatch;
-    batchConfiguredContract.style.display = isTwoModelsBatch ? 'none' : '';
+    batchConfiguredContract.hidden = isTwoModelsBatch || isHyper3dRawBatch;
+    batchConfiguredContract.style.display = isTwoModelsBatch || isHyper3dRawBatch ? 'none' : '';
   }
   if (batchTwoModelsContract) {
     batchTwoModelsContract.hidden = !isTwoModelsBatch;
     batchTwoModelsContract.style.display = isTwoModelsBatch ? '' : 'none';
   }
+  if (batchHyper3dRawContract) {
+    batchHyper3dRawContract.hidden = !isHyper3dRawBatch;
+    batchHyper3dRawContract.style.display = isHyper3dRawBatch ? '' : 'none';
+  }
   const note = document.querySelector('#providerModeNote');
   if (note) {
     note.textContent = isTwoModelsBatch
       ? 'In Batch Production Two Models, each subfolder is evaluated automatically and can run Tencent, Hyper3D, or both.'
-      : isBatch
+      : isHyper3dRawBatch
+        ? 'In Batch Hyper3D Raw, each subfolder is evaluated automatically for Hyper3D only, using original images without OpenAI cleanup.'
+        : isBatch
         ? 'In Batch Production, each subfolder uses its own phone_mapping_project.json.'
         : 'In Individual Production, this selection controls one manually labeled project.';
   }
@@ -720,10 +733,6 @@ async function submitProject(event) {
   const formData = new FormData();
   const provider = currentProvider();
   const selected = selectedFiles();
-  if (provider === 'hyper3d' && selected.length > HYPER3D_MAX_IMAGES) {
-    setStatus(`Hyper3D accepts a maximum of ${HYPER3D_MAX_IMAGES} images. Remove ${selected.length - HYPER3D_MAX_IMAGES} image${selected.length - HYPER3D_MAX_IMAGES === 1 ? '' : 's'} before creating the project.`, 'error');
-    return;
-  }
   formData.append('model_provider', provider);
   formData.append('projectTitle', projectTitleInput ? projectTitleInput.value : '');
   for (const input of imageInputs) {
@@ -734,7 +743,15 @@ async function submitProject(event) {
   }
 
   submitButton.disabled = true;
-  setStatus(`Uploading images and creating project...\n3D provider: ${provider}`);
+  setStatus(
+    [
+      'Uploading images and creating project...',
+      `3D provider: ${provider}`,
+      provider === 'hyper3d' && selected.length > HYPER3D_MAX_IMAGES
+        ? `Hyper3D selection: ${selected.length} uploaded images, auto-selecting best ${HYPER3D_MAX_IMAGES}.`
+        : null,
+    ].filter(Boolean).join('\n'),
+  );
 
   try {
     const response = await fetch('/api/projects', {
@@ -783,14 +800,19 @@ async function submitBatch() {
 
   const formData = new FormData();
   formData.append('batch_zip', file);
-  formData.append('batch_mode', submittedMode === 'batch_two_models' ? 'two_models' : 'configured');
+  const batchMode = submittedMode === 'batch_two_models'
+    ? 'two_models'
+    : submittedMode === 'batch_hyper3d_raw'
+      ? 'hyper3d_raw'
+      : 'configured';
+  formData.append('batch_mode', batchMode);
 
   submitButton.disabled = true;
   setStatus(
     [
       'Uploading batch package...',
       `Source: ${file.name}`,
-      `Mode: ${submittedMode === 'batch_two_models' ? 'two_models' : 'configured'}`,
+      `Mode: ${batchMode}`,
     ].join('\n'),
   );
 

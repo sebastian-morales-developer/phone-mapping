@@ -20,6 +20,7 @@ const insightsStatus = document.querySelector('#insightsStatus');
 const viewerMetrics = document.querySelector('#viewerMetrics');
 const viewerPhotoCount = document.querySelector('#viewerPhotoCount');
 const viewerOrthophotoGrid = document.querySelector('#viewerOrthophotoGrid');
+const viewerComparisonTitle = document.querySelector('#viewerComparisonTitle');
 const viewerComparisonCount = document.querySelector('#viewerComparisonCount');
 const viewerComparisonGrid = document.querySelector('#viewerComparisonGrid');
 const scaleModal = document.querySelector('#scaleModal');
@@ -105,6 +106,8 @@ function faceLabel(fileName) {
   const normalized = fileName.replace(/\.[^.]+$/i, '');
   const comparisonMatch = normalized.match(/(.+)_comparison$/i);
   if (comparisonMatch) return comparisonMatch[1].replace(/_/g, ' ');
+  const editedMatch = normalized.match(/(.+)_edited$/i);
+  if (editedMatch) return editedMatch[1].replace(/_/g, ' ');
   const match = fileName.match(/_(front|back|right|left|top|bottom)\.png$/i);
   return match ? match[1] : normalized.replace(/_/g, ' ');
 }
@@ -180,11 +183,16 @@ function renderInsights(data) {
   const referenceScaleDimensions = referenceScale.metadata && referenceScale.metadata.building_dimensions;
 
   setOrthophotosLink(Boolean(data.exists));
+  const comparisonSource = data.comparisonSource || 'comparison';
+  const isEditedFallback = comparisonSource === 'edited';
   if (refreshHumanScaleButton) {
     refreshHumanScaleButton.disabled = !files.length;
     refreshHumanScaleButton.textContent = referenceScale.exists ? 'Update Reference Scale' : 'Set Reference Scale';
   }
   viewerPhotoCount.textContent = `${files.length} / ${data.expectedCount || 5}`;
+  if (viewerComparisonTitle) {
+    viewerComparisonTitle.textContent = isEditedFallback ? 'Edited Photos' : 'Original vs Cleaned';
+  }
   if (viewerComparisonCount) viewerComparisonCount.textContent = String(comparisonFiles.length);
   viewerOrthophotoGrid.innerHTML = '';
   if (viewerComparisonGrid) viewerComparisonGrid.innerHTML = '';
@@ -251,7 +259,9 @@ function renderInsights(data) {
     if (!comparisonFiles.length) {
       const empty = document.createElement('div');
       empty.className = 'viewer-empty-state';
-      empty.textContent = 'No comparison images are available yet.';
+      empty.textContent = isEditedFallback
+        ? 'No edited images are available yet.'
+        : 'No comparison images are available yet.';
       viewerComparisonGrid.appendChild(empty);
     }
   }

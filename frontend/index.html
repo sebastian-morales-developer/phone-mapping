@@ -60,6 +60,14 @@
                   <small>Auto-run Tencent and Hyper3D when each subfolder supports them</small>
                 </span>
               </label>
+
+              <label class="provider-option">
+                <input type="radio" name="production_mode" value="batch_hyper3d_raw" />
+                <span>
+                  <strong>Batch Hyper3D Raw</strong>
+                  <small>Run Hyper3D only with original images, no OpenAI cleanup</small>
+                </span>
+              </label>
             </div>
             <p id="providerModeNote" class="provider-note">
               In Individual Production, this selection controls the project. In Batch Production, each subfolder uses its own phone_mapping_project.json.
@@ -108,6 +116,13 @@
               <code>project_folder/left_front.jpg</code>
               <code>project_folder/back_left.jpg</code>
               <span>No phone_mapping_project.json is required. The project title is taken from each subfolder name, Tencent uses the best original/inverted orientation, and Hyper3D auto-selects up to 5 views.</span>
+            </div>
+            <div id="batchHyper3dRawContract" class="batch-contract" hidden>
+              <strong>Expected structure for Hyper3D Raw</strong>
+              <code>project_folder/front.jpg</code>
+              <code>project_folder/back_left.jpg</code>
+              <code>project_folder/right_front.jpg</code>
+              <span>No phone_mapping_project.json is required. The project title is taken from each subfolder name, Hyper3D auto-selects up to 5 views, and OpenAI image cleanup is skipped.</span>
             </div>
           </section>
 

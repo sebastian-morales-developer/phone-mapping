@@ -54,7 +54,7 @@ Create a `.env` file in the project root:
 ```text
 OPENAI_API_KEY=your_openai_key
 HYPER3D_API_KEY=your_hyper3d_key
-3DAISTUDIO_API_KEY=your_3daistudio_key
+API_KEY_3DAISTUDIO=your_3daistudio_key
 ```
 
 Use `.env.example` as the safe template. It contains only the variable names and no secrets.
