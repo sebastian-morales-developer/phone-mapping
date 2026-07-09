@@ -73,6 +73,7 @@ DEFAULT_HYPER3D_PROMPT = (
 )
 HYPER3D_WEBAPP_UPLOAD_ORDER = [
     "front",
+    "up",
     "front-left",
     "left",
     "back-left",
@@ -83,6 +84,7 @@ HYPER3D_WEBAPP_UPLOAD_ORDER = [
 ]
 HUNYUAN_TO_HYPER3D_ANGLE = {
     "front": "front",
+    "top": "up",
     "left_front": "front-left",
     "left": "left",
     "back_left": "back-left",
@@ -174,6 +176,11 @@ def parse_args() -> argparse.Namespace:
         choices=["faithful", "creative"],
     )
     parser.add_argument("--hyper3d-prompt", default=DEFAULT_HYPER3D_PROMPT)
+    parser.add_argument(
+        "--hyper3d-bang",
+        action="store_true",
+        help="Run Hyper3D Bang against the generated Rodin asset and download exploded outputs.",
+    )
     parser.add_argument("--hyper3d-preview-render", action="store_true", default=True)
     parser.add_argument("--no-hyper3d-preview-render", dest="hyper3d_preview_render", action="store_false")
     parser.add_argument("--hyper3d-hd-texture", action="store_true")
@@ -293,12 +300,27 @@ def read_project_manifest(project_dir: Path) -> dict[str, Any]:
         return {}
 
 
+def update_project_manifest(project_dir: Path, patch: dict[str, Any]) -> None:
+    manifest_path = project_dir / "project_manifest.json"
+    manifest = read_project_manifest(project_dir)
+    manifest.update(patch)
+    write_json(manifest_path, manifest)
+
+
 def manifest_requests_photo_edit_skip(manifest: dict[str, Any]) -> bool:
     return bool(
         manifest.get("skipPhotoEdit")
         or manifest.get("rawHyper3dImagesOnly")
         or manifest.get("batchMode") == "hyper3d_raw"
         or manifest.get("source") == "batch_hyper3d_raw"
+        or (
+            manifest.get("batchMode") == "by_model"
+            and manifest.get("imageSource") == "original"
+        )
+        or (
+            manifest.get("source") == "batch_by_model"
+            and manifest.get("imageSource") == "original"
+        )
     )
 
 
@@ -634,6 +656,96 @@ def build_hyper3d_args(args: argparse.Namespace) -> SimpleNamespace:
     )
 
 
+def run_hyper3d_bang(
+    args: argparse.Namespace,
+    folders: dict[str, Path],
+    api_key: str,
+    generation_response: dict[str, Any],
+) -> list[Path]:
+    source_task_uuid = generation_response.get("uuid")
+    if not source_task_uuid:
+        raise RuntimeError(f"Hyper3D Bang requires the Rodin generation uuid: {generation_response}")
+
+    bang_output_dir = folders["output_glb"] / "bang"
+    bang_output_dir.mkdir(parents=True, exist_ok=True)
+
+    print("", flush=True)
+    print("=== Hyper3D Bang ===", flush=True)
+    print(f"Source asset_id: {source_task_uuid}", flush=True)
+    print("Strength: 5", flush=True)
+    print("Material: PBR", flush=True)
+    print("Resolution: Basic", flush=True)
+
+    bang_response = hyper3d.submit_bang(
+        api_key=api_key,
+        asset_id=str(source_task_uuid),
+        strength=5,
+        geometry_file_format="glb",
+        material="PBR",
+        resolution="Basic",
+    )
+    write_json(bang_output_dir / "hyper3d_bang_response.json", bang_response)
+
+    bang_task_uuid = bang_response.get("uuid") or bang_response.get("task_uuid")
+    if not bang_task_uuid:
+        raise RuntimeError(f"Missing Hyper3D Bang uuid in response: {bang_response}")
+
+    print(f"Bang task UUID: {bang_task_uuid}", flush=True)
+    try:
+        bang_status = hyper3d.wait_until_done_by_task_uuid(
+            api_key=api_key,
+            task_uuid=str(bang_task_uuid),
+            poll_interval=args.poll_interval,
+            timeout_minutes=args.timeout_minutes,
+            output_dir=bang_output_dir,
+            history_file_name="hyper3d_bang_status_history.json",
+        )
+    except Exception as exc:
+        subscription_key = bang_response.get("jobs", {}).get("subscription_key")
+        if not subscription_key:
+            raise
+        print(f"Bang task_uuid status failed; retrying with subscription_key. Reason: {exc}", flush=True)
+        bang_status = hyper3d.wait_until_done(
+            api_key=api_key,
+            subscription_key=subscription_key,
+            poll_interval=args.poll_interval,
+            timeout_minutes=args.timeout_minutes,
+            output_dir=bang_output_dir,
+        )
+    write_json(bang_output_dir / "hyper3d_bang_final_status.json", bang_status)
+
+    bang_download_response = hyper3d.download_result_list(api_key, str(bang_task_uuid))
+    write_json(bang_output_dir / "hyper3d_bang_download_response.json", bang_download_response)
+    bang_files = hyper3d.download_files(bang_download_response, bang_output_dir)
+
+    metadata = {
+        "enabled": True,
+        "source_task_uuid": str(source_task_uuid),
+        "bang_task_uuid": str(bang_task_uuid),
+        "request": {
+            "strength": 5,
+            "geometry_file_format": "glb",
+            "material": "PBR",
+            "resolution": "Basic",
+        },
+        "response": bang_response,
+        "final_status": bang_status,
+        "download_response": bang_download_response,
+        "downloaded_files": [str(path) for path in bang_files],
+    }
+    write_json(bang_output_dir / "hyper3d_bang_manifest.json", metadata)
+    update_project_manifest(folders["project"], {"hyper3dBang": metadata})
+
+    if bang_files:
+        print("Bang files:", flush=True)
+        for path in bang_files:
+            print(f"  {path}", flush=True)
+    else:
+        raise RuntimeError("Hyper3D Bang finished but no files were downloaded.")
+
+    return bang_files
+
+
 def collect_hyper3d_images_from_paths(
     paths: list[Path],
     max_images: int,
@@ -688,10 +800,10 @@ def generate_hyper3d_model(
     print(f"Tier: {hyper3d_args.tier}", flush=True)
     print(f"Mesh mode: {hyper3d_args.mesh_mode}", flush=True)
 
-    if "front" not in set(detected_angles):
-        raise RuntimeError("Missing required front view in output_photos/edited.")
     if not ordered_images:
         raise RuntimeError("No supported view-named edited images found for Hyper3D.")
+    if "front" not in set(detected_angles):
+        print("Hyper3D front view not provided; continuing with available image labels.", flush=True)
 
     hyper3d.print_selection(
         "hyper3d webapp counter-clockwise",
@@ -794,6 +906,11 @@ def generate_hyper3d_model(
     else:
         print(f"Downloaded files: {', '.join(str(path) for path in downloaded_files)}", flush=True)
         raise RuntimeError("No .glb file was downloaded.")
+
+    if args.hyper3d_bang:
+        run_hyper3d_bang(args, folders, api_key, generation_response)
+    else:
+        print("Hyper3D Bang: disabled", flush=True)
 
     return glb_files
 

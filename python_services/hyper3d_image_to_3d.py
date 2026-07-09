@@ -24,6 +24,7 @@ from dotenv import load_dotenv
 
 
 RODIN_ENDPOINT = "https://api.hyper3d.com/api/v2/rodin"
+BANG_ENDPOINT = "https://api.hyper3d.com/api/v2/bang"
 STATUS_ENDPOINT = "https://api.hyper3d.com/api/v2/status"
 DOWNLOAD_ENDPOINT = "https://api.hyper3d.com/api/v2/download"
 
@@ -510,6 +511,41 @@ def submit_generation(
     return data
 
 
+def submit_bang(
+    api_key: str,
+    asset_id: str,
+    strength: int = 5,
+    geometry_file_format: str = "glb",
+    material: str = "PBR",
+    resolution: str = "Basic",
+) -> dict[str, Any]:
+    headers = {"Authorization": f"Bearer {api_key}"}
+    files = [
+        ("asset_id", (None, asset_id)),
+        ("strength", (None, str(strength))),
+        ("geometry_file_format", (None, geometry_file_format)),
+        ("material", (None, material)),
+        ("resolution", (None, resolution)),
+    ]
+    response = requests.post(
+        BANG_ENDPOINT,
+        headers=headers,
+        files=files,
+        timeout=120,
+    )
+    try:
+        response.raise_for_status()
+    except HTTPError as exc:
+        body = response.text.strip()
+        if body:
+            raise RuntimeError(f"{exc}; response body: {body[:2000]}") from exc
+        raise
+    data = response.json()
+    if data.get("error"):
+        raise RuntimeError(f"Hyper3D Bang error: {data}")
+    return data
+
+
 def check_status(api_key: str, subscription_key: str) -> dict[str, Any]:
     headers = {
         "accept": "application/json",
@@ -527,6 +563,57 @@ def check_status(api_key: str, subscription_key: str) -> dict[str, Any]:
     if data.get("error"):
         raise RuntimeError(f"Hyper3D status error: {data}")
     return data
+
+
+def check_status_by_task_uuid(api_key: str, task_uuid: str) -> dict[str, Any]:
+    headers = {
+        "accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+    response = requests.post(
+        STATUS_ENDPOINT,
+        headers=headers,
+        json={"task_uuid": task_uuid},
+        timeout=60,
+    )
+    response.raise_for_status()
+    data = response.json()
+    if data.get("error"):
+        raise RuntimeError(f"Hyper3D status error: {data}")
+    return data
+
+
+def wait_until_done_by_task_uuid(
+    api_key: str,
+    task_uuid: str,
+    poll_interval: int,
+    timeout_minutes: int,
+    output_dir: Path,
+    history_file_name: str = "status_history.json",
+) -> dict[str, Any]:
+    deadline = time.monotonic() + timeout_minutes * 60
+    history = []
+
+    while True:
+        status_data = check_status_by_task_uuid(api_key, task_uuid)
+        history.append(status_data)
+        (output_dir / history_file_name).write_text(
+            json.dumps(history, indent=2),
+            encoding="utf-8",
+        )
+
+        statuses = [job.get("status") for job in status_data.get("jobs", [])]
+        print(f"Status: {', '.join(statuses) or 'Unknown'}", flush=True)
+
+        if statuses and all(status == "Done" for status in statuses):
+            return status_data
+        if any(status == "Failed" for status in statuses):
+            raise RuntimeError(f"Hyper3D task failed: {status_data}")
+        if time.monotonic() > deadline:
+            raise TimeoutError(f"Timed out after {timeout_minutes} minutes.")
+
+        time.sleep(poll_interval)
 
 
 def wait_until_done(

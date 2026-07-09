@@ -11,6 +11,7 @@ const submitButton = document.querySelector('#submitButton');
 const individualPanel = document.querySelector('#individualPanel');
 const batchPanel = document.querySelector('#batchPanel');
 const generationModelPanel = document.querySelector('#generationModelPanel');
+const imageSourcePanel = document.querySelector('#imageSourcePanel');
 const projectTitleField = document.querySelector('#projectTitleField');
 const projectTitleInput = form.querySelector('input[name="projectTitle"]');
 const batchZipInput = form.querySelector('input[name="batch_zip"]');
@@ -18,12 +19,14 @@ const batchZipState = document.querySelector('#batchZipState');
 const batchConfiguredContract = document.querySelector('#batchConfiguredContract');
 const batchTwoModelsContract = document.querySelector('#batchTwoModelsContract');
 const batchHyper3dRawContract = document.querySelector('#batchHyper3dRawContract');
+const batchByModelContract = document.querySelector('#batchByModelContract');
 const projectsPanel = document.querySelector('#projectsPanel');
 const projectSubmitRow = document.querySelector('#projectSubmitRow');
 
 const imageInputs = Array.from(form.querySelectorAll('input[type="file"]:not([name="batch_zip"])'));
 const modeInputs = Array.from(form.querySelectorAll('input[name="production_mode"]'));
 const providerInputs = Array.from(form.querySelectorAll('input[name="model_provider"]'));
+const imageSourceInputs = Array.from(form.querySelectorAll('input[name="image_source"]'));
 const providerExtraTiles = Array.from(form.querySelectorAll('[data-provider-only]'));
 const frontInput = form.querySelector('input[name="front"]');
 const frontPhotoActionMenu = document.querySelector('#frontPhotoActionMenu');
@@ -49,7 +52,7 @@ const uploadPreviewUrls = new WeakMap();
 const acceptedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const HYPER3D_MAX_IMAGES = 5;
 const COMPASS_DISPLAY_STEP_DEGREES = 5;
-const FRONT_PREVIEW_EXTENSIONS = ['jpeg', 'jpg', 'png', 'webp'];
+const VISIBLE_PRODUCTION_MODES = new Set(['individual', 'batch_by_model']);
 const PIPELINE_STAGES = [
   {
     key: 'upload',
@@ -74,7 +77,14 @@ const PIPELINE_STAGES = [
     key: 'cleanup',
     label: 'OpenAI cleanup',
     detail: 'Obstacle removal and image cleanup',
-    patterns: ['Photo Editing', 'Editing:', 'Photo elapsed:', 'Photo editing done'],
+    patterns: [
+      'Photo Editing',
+      'Editing:',
+      'Photo elapsed:',
+      'Photo editing done',
+      'OpenAI photo editing is disabled',
+      'Seeded raw images into output_photos/edited',
+    ],
   },
   {
     key: 'generation',
@@ -117,6 +127,26 @@ function currentProvider() {
   return providerInputs.find((input) => input.checked)?.value || 'tencent';
 }
 
+function currentImageSource() {
+  return imageSourceInputs.find((input) => input.checked)?.value || 'ai_cleaned';
+}
+
+function ensureVisibleProductionMode() {
+  const current = modeInputs.find((input) => input.checked);
+  if (current && VISIBLE_PRODUCTION_MODES.has(current.value)) return;
+  const fallback = modeInputs.find((input) => input.value === 'individual');
+  if (fallback) fallback.checked = true;
+}
+
+function projectNumber(projectName) {
+  const match = String(projectName || '').match(/^project_(\d+)$/i);
+  return match ? Number(match[1]) : 0;
+}
+
+function frontPhotoIsRequired() {
+  return currentProductionMode() === 'individual' && currentProvider() === 'tencent';
+}
+
 function providerLabel(modelProvider) {
   if (modelProvider === 'hyper3d') return 'Hyper3D';
   if (modelProvider === 'tencent') return 'Tencent';
@@ -125,7 +155,8 @@ function providerLabel(modelProvider) {
 
 function isInputActive(input) {
   const providerOnly = input.closest('[data-provider-only]');
-  return !providerOnly || providerOnly.dataset.providerOnly === currentProvider();
+  if (!providerOnly) return true;
+  return providerOnly.dataset.providerOnly.split(/\s+/).includes(currentProvider());
 }
 
 function escapeHtml(value) {
@@ -137,22 +168,9 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-function frontPreviewFallbackUrl(projectName, extensionIndex = 0) {
-  const extension = FRONT_PREVIEW_EXTENSIONS[extensionIndex] || FRONT_PREVIEW_EXTENSIONS[0];
-  return `/projects/${encodeURIComponent(projectName)}/input_photos/front.${extension}`;
-}
-
-window.handleProjectPreviewError = function handleProjectPreviewError(image, projectName) {
-  const currentIndex = Number(image.dataset.extensionIndex || '0');
-  const nextIndex = currentIndex + 1;
-  if (nextIndex < FRONT_PREVIEW_EXTENSIONS.length) {
-    image.dataset.extensionIndex = String(nextIndex);
-    image.src = frontPreviewFallbackUrl(projectName, nextIndex);
-    return;
-  }
-
+window.handleProjectPreviewError = function handleProjectPreviewError(image) {
   const holder = image.closest('.project-preview-media');
-  if (holder) holder.innerHTML = '<span>No front photo</span>';
+  if (holder) holder.innerHTML = '<span>No photo</span>';
 };
 
 function linesFromStatus(messageOrLines) {
@@ -162,6 +180,16 @@ function linesFromStatus(messageOrLines) {
 
 function stageHasLog(stage, lines) {
   return lines.some((line) => stage.patterns.some((pattern) => line.includes(pattern)));
+}
+
+function cleanupWasSkipped(lines) {
+  return lines.some((line) => (
+    line.includes('--skip-photo-edit')
+    || line.includes('Skip OpenAI photo editing: True')
+    || line.includes('OpenAI photo editing is disabled')
+    || line.includes('OpenAI cleanup skipped')
+    || line.includes('without OpenAI cleanup')
+  ));
 }
 
 function extractFirstMatch(lines, regex) {
@@ -187,6 +215,8 @@ function stageTime(stageKey, lines) {
 }
 
 function stageStatus(stage, lines, overallTone) {
+  if (stage.key === 'cleanup' && cleanupWasSkipped(lines)) return 'pending';
+
   if (overallTone === 'error') {
     if (stageHasLog(stage, lines)) return 'failed';
     return 'pending';
@@ -361,12 +391,36 @@ function clearInput(input) {
   updateFileState(input);
 }
 
+function clearUploadedProjectFiles() {
+  imageInputs.forEach((input) => {
+    input.value = '';
+    updateFileState(input);
+  });
+  clearFrontCompassMetadata('form_reset');
+}
+
+function clearBatchZipFile() {
+  if (batchZipInput) batchZipInput.value = '';
+  updateBatchZipState();
+}
+
 function updateProviderFields() {
   hideFrontPhotoMenu();
   if (!shouldUseFrontPhotoMenu(frontInput)) closeCameraModal();
   const provider = currentProvider();
+  if (frontInput) {
+    frontInput.required = frontPhotoIsRequired();
+  }
+  const showImageSource = currentProductionMode() === 'individual' || currentProductionMode() === 'batch_by_model';
+  if (imageSourcePanel) {
+    imageSourcePanel.hidden = !showImageSource;
+    imageSourcePanel.style.display = showImageSource ? '' : 'none';
+  }
+  imageSourceInputs.forEach((input) => {
+    input.disabled = !showImageSource;
+  });
   for (const tile of providerExtraTiles) {
-    const isVisible = tile.dataset.providerOnly === provider;
+    const isVisible = tile.dataset.providerOnly.split(/\s+/).includes(provider);
     tile.hidden = !isVisible;
     if (!isVisible) {
       const input = tile.querySelector('input[type="file"]');
@@ -386,7 +440,7 @@ function updateBatchZipState() {
   tile.classList.toggle('is-filled', Boolean(file));
   if (!file) {
     const mode = currentProductionMode();
-    batchZipState.textContent = mode === 'batch_two_models' || mode === 'batch_hyper3d_raw'
+    batchZipState.textContent = mode === 'batch_two_models' || mode === 'batch_hyper3d_raw' || mode === 'batch_by_model'
       ? 'Required. Each subfolder only needs named images; no JSON is required.'
       : 'Required. Each subfolder must include phone_mapping_project.json and named images.';
     return;
@@ -396,18 +450,21 @@ function updateBatchZipState() {
 }
 
 function updateProductionModeFields() {
+  ensureVisibleProductionMode();
   hideFrontPhotoMenu();
   if (!shouldUseFrontPhotoMenu(frontInput)) closeCameraModal();
   const mode = currentProductionMode();
   const isBatch = mode !== 'individual';
   const isTwoModelsBatch = mode === 'batch_two_models';
   const isHyper3dRawBatch = mode === 'batch_hyper3d_raw';
+  const isByModelBatch = mode === 'batch_by_model';
+  const showGenerationModel = mode === 'individual' || isByModelBatch;
   individualPanel.hidden = isBatch;
   individualPanel.style.display = isBatch ? 'none' : '';
   batchPanel.hidden = !isBatch;
   batchPanel.style.display = isBatch ? '' : 'none';
-  generationModelPanel.hidden = isBatch;
-  generationModelPanel.style.display = isBatch ? 'none' : '';
+  generationModelPanel.hidden = !showGenerationModel;
+  generationModelPanel.style.display = showGenerationModel ? '' : 'none';
   if (projectTitleField) {
     projectTitleField.hidden = isBatch;
     projectTitleField.style.display = isBatch ? 'none' : '';
@@ -422,8 +479,8 @@ function updateProductionModeFields() {
     batchZipInput.disabled = !isBatch;
   }
   if (batchConfiguredContract) {
-    batchConfiguredContract.hidden = isTwoModelsBatch || isHyper3dRawBatch;
-    batchConfiguredContract.style.display = isTwoModelsBatch || isHyper3dRawBatch ? 'none' : '';
+    batchConfiguredContract.hidden = isTwoModelsBatch || isHyper3dRawBatch || isByModelBatch;
+    batchConfiguredContract.style.display = isTwoModelsBatch || isHyper3dRawBatch || isByModelBatch ? 'none' : '';
   }
   if (batchTwoModelsContract) {
     batchTwoModelsContract.hidden = !isTwoModelsBatch;
@@ -433,12 +490,18 @@ function updateProductionModeFields() {
     batchHyper3dRawContract.hidden = !isHyper3dRawBatch;
     batchHyper3dRawContract.style.display = isHyper3dRawBatch ? '' : 'none';
   }
+  if (batchByModelContract) {
+    batchByModelContract.hidden = !isByModelBatch;
+    batchByModelContract.style.display = isByModelBatch ? '' : 'none';
+  }
   const note = document.querySelector('#providerModeNote');
   if (note) {
     note.textContent = isTwoModelsBatch
       ? 'In Batch Production Two Models, each subfolder is evaluated automatically and can run Tencent, Hyper3D, or both.'
       : isHyper3dRawBatch
         ? 'In Batch Hyper3D Raw, each subfolder is evaluated automatically for Hyper3D only, using original images without OpenAI cleanup.'
+        : isByModelBatch
+        ? 'In Batch Production by Model, every subfolder uses the selected provider and image source.'
         : isBatch
         ? 'In Batch Production, each subfolder uses its own phone_mapping_project.json.'
         : 'In Individual Production, this selection controls one manually labeled project.';
@@ -853,14 +916,20 @@ async function loadProjects() {
       return;
     }
 
-    projectsList.innerHTML = data.projects
+    const projects = [...data.projects].sort((a, b) => {
+      const nameA = typeof a === 'string' ? a : a.name;
+      const nameB = typeof b === 'string' ? b : b.name;
+      return projectNumber(nameB) - projectNumber(nameA);
+    });
+
+    projectsList.innerHTML = projects
       .map((project) => {
         const projectName = typeof project === 'string' ? project : project.name;
         const projectTitle = typeof project === 'string' ? '' : project.projectTitle || '';
         const projectTitleLabel = projectTitle.trim() ? projectTitle : 'Untitled';
         const modelProvider = typeof project === 'string' ? null : project.modelProvider || null;
-        const frontPreview = typeof project === 'string' ? null : project.frontPreview || null;
-        const previewUrl = frontPreview?.url || frontPreviewFallbackUrl(projectName);
+        const previewImage = typeof project === 'string' ? null : project.previewImage || project.frontPreview || null;
+        const previewUrl = previewImage?.url || null;
         const glbFiles = typeof project === 'string' ? [] : project.glbFiles || [];
         const glbLinks = glbFiles.length
           ? glbFiles
@@ -880,13 +949,14 @@ async function loadProjects() {
         return `
           <li class="project-preview-card border border-zinc-800 text-zinc-300">
             <div class="project-preview-media">
-              <img
-                src="${previewUrl}"
-                alt="${escapeHtml(projectName)} front photo"
-                loading="lazy"
-                data-extension-index="0"
-                onerror="window.handleProjectPreviewError(this, '${escapeHtml(projectName)}')"
-              >
+              ${previewUrl
+                ? `<img
+                    src="${previewUrl}"
+                    alt="${escapeHtml(projectName)} project photo"
+                    loading="lazy"
+                    onerror="window.handleProjectPreviewError(this)"
+                  >`
+                : '<span>No photo</span>'}
             </div>
             <div class="project-preview-body">
               <div class="font-medium">
@@ -1078,16 +1148,25 @@ async function submitProject(event) {
     return;
   }
 
+  const provider = currentProvider();
+  const selected = selectedFiles();
   const front = form.querySelector('input[name="front"]');
-  if (!front.files || !front.files.length) {
+  if (provider === 'tencent' && (!front.files || !front.files.length)) {
     setStatus('front image is required.', 'error');
+    return;
+  }
+  if (provider === 'hyper3d' && selected.length < 1) {
+    setStatus('Hyper3D requires at least one image in any angle slot.', 'error');
     return;
   }
 
   const formData = new FormData();
-  const provider = currentProvider();
-  const selected = selectedFiles();
+  const imageSource = currentImageSource();
+  const hyper3dBangEnabled = false;
   formData.append('model_provider', provider);
+  formData.append('image_source', imageSource);
+  formData.append('hyper3d_image_source', imageSource);
+  formData.append('hyper3d_bang_enabled', String(hyper3dBangEnabled));
   formData.append('projectTitle', projectTitleInput ? projectTitleInput.value : '');
   formData.append('frontCompassMetadata', JSON.stringify(frontPhotoCompassMetadata || emptyCompassMetadata('not_captured')));
   for (const input of imageInputs) {
@@ -1102,6 +1181,7 @@ async function submitProject(event) {
     [
       'Uploading images and creating project...',
       `3D provider: ${provider}`,
+      `Image source: ${imageSource === 'original' ? 'original images, OpenAI cleanup skipped' : 'AI-cleaned images'}`,
       provider === 'hyper3d' && selected.length > HYPER3D_MAX_IMAGES
         ? `Hyper3D selection: ${selected.length} uploaded images, auto-selecting best ${HYPER3D_MAX_IMAGES}.`
         : null,
@@ -1123,15 +1203,15 @@ async function submitProject(event) {
       [
         `Created: ${data.projectName}`,
         `3D provider: ${data.modelProvider}`,
+        data.imageSource ? `Image source: ${data.imageSource}` : null,
         `Images saved: ${data.savedImages.length}`,
         `Next: ${data.nextStep}`,
         'Pipeline started.',
-      ].join('\n'),
+      ].filter(Boolean).join('\n'),
       'success',
     );
-    form.reset();
-    clearFrontCompassMetadata('form_reset');
-    imageInputs.forEach(updateFileState);
+    clearUploadedProjectFiles();
+    if (projectTitleInput) projectTitleInput.value = '';
     updateProviderFields();
     updateFormHint();
     await loadProjects();
@@ -1160,8 +1240,14 @@ async function submitBatch() {
     ? 'two_models'
     : submittedMode === 'batch_hyper3d_raw'
       ? 'hyper3d_raw'
+      : submittedMode === 'batch_by_model'
+      ? 'by_model'
       : 'configured';
   formData.append('batch_mode', batchMode);
+  if (submittedMode === 'batch_by_model') {
+    formData.append('model_provider', currentProvider());
+    formData.append('image_source', currentImageSource());
+  }
 
   submitButton.disabled = true;
   setStatus(
@@ -1169,7 +1255,9 @@ async function submitBatch() {
       'Uploading batch package...',
       `Source: ${file.name}`,
       `Mode: ${batchMode}`,
-    ].join('\n'),
+      submittedMode === 'batch_by_model' ? `3D provider: ${currentProvider()}` : null,
+      submittedMode === 'batch_by_model' ? `Image source: ${currentImageSource()}` : null,
+    ].filter(Boolean).join('\n'),
   );
 
   try {
@@ -1192,10 +1280,7 @@ async function submitBatch() {
       ].join('\n'),
       'success',
     );
-    form.reset();
-    const batchModeInput = modeInputs.find((input) => input.value === submittedMode);
-    if (batchModeInput) batchModeInput.checked = true;
-    imageInputs.forEach(updateFileState);
+    clearBatchZipFile();
     updateProductionModeFields();
     await loadProjects();
     watchBatch(data.batchId);

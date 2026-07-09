@@ -15,6 +15,7 @@ APP_ROOT = Path(__file__).resolve().parents[1]
 RUN_PIPELINE = APP_ROOT / "python_services" / "run_pipeline.py"
 CREATE_ORTHOPHOTOS = APP_ROOT / "python_services" / "create_orthophotos.py"
 CALCULATE_TOP_AREA = APP_ROOT / "python_services" / "calculate_top_area.py"
+CLIP_TOP_ONLY_HYPER3D_GLB = APP_ROOT / "python_services" / "clip_top_only_hyper3d_glb.py"
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,6 +27,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-3d", action="store_true")
     parser.add_argument("--poll-interval", type=int, default=20)
     parser.add_argument("--timeout-minutes", type=int, default=30)
+    parser.add_argument("--hyper3d-bang", action="store_true")
     return parser.parse_args()
 
 
@@ -79,6 +81,8 @@ def main() -> int:
         base_command.append("--skip-photo-edit")
     if args.skip_3d:
         base_command.append("--skip-3d")
+    if args.hyper3d_bang:
+        base_command.append("--hyper3d-bang")
 
     run_step("Base pipeline: photo edit and GLB generation", base_command)
 
@@ -88,6 +92,19 @@ def main() -> int:
 
     glb_path = first_glb_path(project_dir)
     print(f"GLB selected for extended pipeline: {glb_path}", flush=True)
+
+    if args.model_provider == "hyper3d":
+        run_step(
+            "Post-process top-only Hyper3D GLB if needed",
+            [
+                sys.executable,
+                str(CLIP_TOP_ONLY_HYPER3D_GLB),
+                "--project",
+                str(project_dir),
+                "--model",
+                str(glb_path),
+            ],
+        )
 
     run_step(
         "Create orthophotos, normalize dimensions, and calculate GLB dimensions",

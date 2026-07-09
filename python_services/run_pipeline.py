@@ -25,6 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-3d", action="store_true")
     parser.add_argument("--poll-interval", type=int, default=20)
     parser.add_argument("--timeout-minutes", type=int, default=30)
+    parser.add_argument("--hyper3d-bang", action="store_true")
     return parser.parse_args()
 
 
@@ -58,6 +59,8 @@ def main() -> int:
         delegated_args.append("--skip-photo-edit")
     if args.skip_3d:
         delegated_args.append("--skip-3d")
+    if args.hyper3d_bang:
+        delegated_args.append("--hyper3d-bang")
 
     print("Python microservice started", flush=True)
     print(f"App root: {APP_ROOT}", flush=True)

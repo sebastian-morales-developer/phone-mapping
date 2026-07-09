@@ -49,7 +49,7 @@
                 </span>
               </label>
 
-              <label class="provider-option">
+              <label class="provider-option" hidden>
                 <input type="radio" name="production_mode" value="batch" />
                 <span>
                   <strong>Batch Production</strong>
@@ -57,7 +57,7 @@
                 </span>
               </label>
 
-              <label class="provider-option">
+              <label class="provider-option" hidden>
                 <input type="radio" name="production_mode" value="batch_two_models" />
                 <span>
                   <strong>Batch Production Two Models</strong>
@@ -65,39 +65,93 @@
                 </span>
               </label>
 
-              <label class="provider-option">
+              <label class="provider-option" hidden>
                 <input type="radio" name="production_mode" value="batch_hyper3d_raw" />
                 <span>
                   <strong>Batch Hyper3D Raw</strong>
                   <small>Run Hyper3D only with original images, no OpenAI cleanup</small>
                 </span>
               </label>
+
+              <label class="provider-option">
+                <input type="radio" name="production_mode" value="batch_by_model" />
+                <span>
+                  <strong>Batch Production by Model</strong>
+                  <small>Run every subfolder with the selected provider and image source</small>
+                </span>
+              </label>
             </div>
             <p id="providerModeNote" class="provider-note">
-              In Individual Production, this selection controls the project. In Batch Production, each subfolder uses its own phone_mapping_project.json.
+              In Individual Production, this selection controls one manually labeled project.
             </p>
           </fieldset>
 
           <fieldset id="generationModelPanel" class="provider-panel">
             <legend class="provider-title">3D generation model</legend>
             <div class="provider-options" role="radiogroup" aria-label="3D generation model">
+              
               <label class="provider-option">
-                <input type="radio" name="model_provider" value="tencent" checked />
+                <input type="radio" name="model_provider" value="hyper3d" checked/>
+                <span>
+                  <strong>Hyper3D Rodin Gen-2.5</strong>
+                  <small>Hyper3D five-image workflow (9 angles - 5 images)</small>
+                </span>
+              </label>
+              
+              <label class="provider-option">
+                <input type="radio" name="model_provider" value="tencent"  />
                 <span>
                   <strong>Tencent Hunyuan 3.1</strong>
-                  <small>3D AI Studio multiview workflow (6 angles - 6 images)</small>
+                  <small>3D AI Studio multiview workflow (7 angles - 7 images)</small>
                 </span>
               </label>
 
-              <label class="provider-option">
-                <input type="radio" name="model_provider" value="hyper3d" />
-                <span>
-                  <strong>Hyper3D Rodin Gen-2.5</strong>
-                  <small>Hyper3D five-image workflow (8 angles - 5 images)</small>
-                </span>
-              </label>
+              
+
             </div>
           </fieldset>
+
+          <fieldset id="imageSourcePanel" class="provider-panel" hidden>
+            <legend class="provider-title">Image source</legend>
+            <div class="provider-options" role="radiogroup" aria-label="Image source">
+              
+              <label class="provider-option">
+                <input type="radio" name="image_source" value="original" checked />
+                <span>
+                  <strong>Original images</strong>
+                  <small>Skip OpenAI cleanup and send selected originals to the 3D provider</small>
+                </span>
+              </label>
+              
+              <label class="provider-option">
+                <input type="radio" name="image_source" value="ai_cleaned"  />
+                <span>
+                  <strong>AI-cleaned images</strong>
+                  <small>Run OpenAI image cleanup before 3D generation</small>
+                </span>
+              </label>
+
+              
+
+            </div>
+          </fieldset>
+
+          <input type="hidden" name="hyper3d_bang_enabled" value="false" />
+
+          <label id="projectTitleField" class="project-title-field">
+            <span>
+              <strong>Project title</strong>
+              <small>Optional display name for this project.</small>
+            </span>
+            <input
+              id="projectTitleInput"
+              type="text"
+              name="projectTitle"
+              maxlength="180"
+              placeholder="Example: Weixler (1) - PEND R - RR"
+              autocomplete="off"
+            />
+          </label>
 
           <section id="batchPanel" class="space-y-4" hidden>
             <label class="upload-tile md:col-span-2" id="batchZipTile">
@@ -111,6 +165,7 @@
               <strong>Expected structure</strong>
               <code>project_folder/front.jpg</code>
               <code>project_folder/left_front.jpg</code>
+              <code>project_folder/top.jpg</code>
               <code>project_folder/phone_mapping_project.json</code>
               <span>JSON schema: {"model_provider": "tencent", "projectTitle": "Optional title"} or {"model_provider": "hyper3d", "projectTitle": "Optional title"}</span>
             </div>
@@ -118,6 +173,7 @@
               <strong>Expected structure for Two Models</strong>
               <code>project_folder/front.jpg</code>
               <code>project_folder/left_front.jpg</code>
+              <code>project_folder/top.jpg</code>
               <code>project_folder/back_left.jpg</code>
               <span>No phone_mapping_project.json is required. The project title is taken from each subfolder name, Tencent uses the best original/inverted orientation, and Hyper3D auto-selects up to 5 views.</span>
             </div>
@@ -127,6 +183,13 @@
               <code>project_folder/back_left.jpg</code>
               <code>project_folder/right_front.jpg</code>
               <span>No phone_mapping_project.json is required. The project title is taken from each subfolder name, Hyper3D auto-selects up to 5 views, and OpenAI image cleanup is skipped.</span>
+            </div>
+            <div id="batchByModelContract" class="batch-contract" hidden>
+              <strong>Expected structure for Batch by Model</strong>
+              <code>project_folder/front.jpg</code>
+              <code>project_folder/top.jpg</code>
+              <code>project_folder/back_left.jpg</code>
+              <span>No phone_mapping_project.json is required. The selected provider and image source apply to every subfolder. Tencent requires front; Hyper3D needs at least one image and auto-selects up to 5 views.</span>
             </div>
           </section>
 
@@ -139,10 +202,16 @@
             <div class="photo-map-shell" aria-label="House photo angle map">
               <img class="photo-map-house" src="/images/top_view_house_index.png" alt="Top view of house" />
 
+              <label class="upload-tile angle-zone angle-top provider-extra" data-provider-only="tencent hyper3d" hidden>
+                <span class="upload-label">top photo</span>
+                <span class="upload-state" data-state-for="top">Optional</span>
+                <input class="sr-only" type="file" name="top" accept="image/jpeg,image/png,image/webp" />
+              </label>
+
               <label class="upload-tile angle-zone angle-front" data-required="true">
                 <span class="upload-label">front photo</span>
                 <span class="upload-state" data-state-for="front">Required</span>
-                <input class="sr-only" type="file" name="front" accept="image/jpeg,image/png,image/webp" required />
+                <input class="sr-only" type="file" name="front" accept="image/jpeg,image/png,image/webp" />
               </label>
 
               <label class="upload-tile angle-zone angle-left-front">
@@ -188,21 +257,6 @@
               </label>
             </div>
           </div>
-
-          <label id="projectTitleField" class="project-title-field">
-            <span>
-              <strong>Project title</strong>
-              <small>Optional display name for this project.</small>
-            </span>
-            <input
-              id="projectTitleInput"
-              type="text"
-              name="projectTitle"
-              maxlength="180"
-              placeholder="Example: Weixler (1) - PEND R - RR"
-              autocomplete="off"
-            />
-          </label>
 
           <div id="projectSubmitRow" class="flex flex-col gap-3 border-t border-zinc-800 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p id="formHint" class="text-sm text-zinc-400">0 images selected</p>

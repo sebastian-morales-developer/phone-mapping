@@ -33,12 +33,13 @@ const TOP_AREA_SERVICE = path.join(ROOT_DIR, 'python_services', 'calculate_top_a
 const DEFAULT_PYTHON_BIN = path.join(ROOT_DIR, '.venv', 'bin', 'python');
 const DEFAULT_ORTHOPHOTO_PYTHON_BIN = path.join(ROOT_DIR, '.venv', 'bin', 'python');
 
-const VIEW_FIELDS = ['front', 'left', 'right', 'back', 'left_front', 'right_front', 'back_left', 'back_right'];
+const VIEW_FIELDS = ['front', 'left', 'right', 'back', 'left_front', 'right_front', 'back_left', 'back_right', 'top'];
 const REQUIRED_FIELDS = new Set(['front']);
 const MODEL_PROVIDERS = new Set(['tencent', 'hyper3d']);
-const BATCH_MODES = new Set(['configured', 'two_models', 'hyper3d_raw']);
-const TENCENT_ALLOWED_VIEWS = ['front', 'left_front', 'right_front', 'left', 'right', 'back'];
-const HYPER3D_SELECTION_ORDER = ['front', 'left_front', 'left', 'back_left', 'back', 'back_right', 'right', 'right_front'];
+const IMAGE_SOURCES = new Set(['ai_cleaned', 'original']);
+const BATCH_MODES = new Set(['configured', 'two_models', 'hyper3d_raw', 'by_model']);
+const TENCENT_ALLOWED_VIEWS = ['front', 'left_front', 'right_front', 'left', 'right', 'back', 'top'];
+const HYPER3D_SELECTION_ORDER = ['front', 'top', 'left_front', 'left', 'back_left', 'back', 'back_right', 'right', 'right_front'];
 const TENCENT_INVERTED_VIEW = {
   front: 'back',
   left_front: 'back_right',
@@ -48,6 +49,7 @@ const TENCENT_INVERTED_VIEW = {
   back_right: 'left_front',
   right: 'left',
   right_front: 'back_left',
+  top: 'top',
 };
 const IMAGE_MIME_TO_EXT = {
   'image/jpeg': '.jpeg',
@@ -164,7 +166,11 @@ function filesByField(files) {
   return result;
 }
 
-function validateRequiredUploads(fileMap) {
+function validateRequiredUploads(fileMap, modelProvider = 'tencent') {
+  if (modelProvider === 'hyper3d') {
+    return VIEW_FIELDS.some((field) => fileMap.has(field)) ? [] : ['at_least_one_image'];
+  }
+
   const missing = [];
   for (const field of REQUIRED_FIELDS) {
     if (!fileMap.has(field)) missing.push(field);
@@ -272,6 +278,7 @@ function detectViewFromFileName(fileName) {
     ['right_front', ['right_front', 'front_right']],
     ['back_left', ['back_left', 'left_back']],
     ['back_right', ['back_right', 'right_back']],
+    ['top', ['top', 'up', 'roof_top', 'aerial']],
     ['front', ['front']],
     ['left', ['left']],
     ['right', ['right']],
@@ -288,7 +295,7 @@ function detectViewFromFileName(fileName) {
 
 function batchAllowedViews(modelProvider) {
   if (modelProvider === 'hyper3d') return VIEW_FIELDS;
-  return ['front', 'left_front', 'right_front', 'left', 'right', 'back'];
+  return TENCENT_ALLOWED_VIEWS;
 }
 
 function imageExtensionFromName(fileName) {
@@ -552,6 +559,10 @@ function normalizeNullableNumber(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+function normalizeBooleanFlag(value) {
+  return value === true || value === 'true' || value === '1' || value === 'on' || value === 'yes';
+}
+
 function normalizeFrontCompassMetadata(value) {
   let payload = value;
   if (typeof value === 'string' && value.trim()) {
@@ -604,14 +615,18 @@ async function projectTitleForProject(projectName) {
   }
 }
 
-function startPipeline(projectName, projectDir, modelProvider = 'tencent') {
+function normalizeImageSource(value) {
+  return IMAGE_SOURCES.has(value) ? value : 'ai_cleaned';
+}
+
+function startPipeline(projectName, projectDir, modelProvider = 'tencent', extraArgs = []) {
   const logsDir = path.join(projectDir, 'logs');
   fsSync.mkdirSync(logsDir, { recursive: true });
   const startedAt = new Date().toISOString();
   const safeTimestamp = startedAt.replace(/[:.]/g, '-');
   const logPath = path.join(logsDir, `node_pipeline_${safeTimestamp}.log`);
   const bin = pythonBin();
-  const args = [PYTHON_SERVICE, '--project', projectDir, '--model-provider', modelProvider];
+  const args = [PYTHON_SERVICE, '--project', projectDir, '--model-provider', modelProvider, ...extraArgs];
 
   const job = {
     projectName,
@@ -779,6 +794,8 @@ function publicBatchJob(batchJob) {
   return {
     batchId: batchJob.batchId,
     mode: batchJob.mode || 'configured',
+    modelProvider: batchJob.modelProvider || null,
+    imageSource: batchJob.imageSource || null,
     status: batchJob.status,
     originalName: batchJob.originalName,
     startedAt: batchJob.startedAt,
@@ -1014,8 +1031,9 @@ async function chooseHyper3dViewsWithOpenAi(sourceDir, byView, batchJob, sourceF
       text: [
         'You are selecting the best image views for a Hyper3D Rodin Gen-2.5 residential building reconstruction.',
         'Choose exactly 5 views from the candidate images unless fewer than 5 are provided.',
+        'The top view is an overhead roof/aerial image and can be useful when roof coverage or plan geometry is important.',
         'Prioritize: front view included, broad angular coverage around the building, sharpness, low obstructions, visible walls, roof planes, corners, doors/windows, and architectural volumes.',
-        'Return only JSON with this schema: {"selected_views":["front","left_front"],"reason":"short reason","view_notes":{"front":"short note"}}.',
+        'Return only JSON with this schema: {"selected_views":["front","top","left_front"],"reason":"short reason","view_notes":{"front":"short note"}}.',
         `Candidate view names: ${availableViews.join(', ')}.`,
       ].join(' '),
     },
@@ -1272,8 +1290,8 @@ async function runBatchProviderAttempt({
     if (!selectedImages.length) {
       throw new Error(`No ${modelProvider} images were selected.`);
     }
-    if (!selectedImages.some((image) => image.view === 'front')) {
-      throw new Error(`Missing required front image after ${modelProvider} selection.`);
+    if (modelProvider === 'tencent' && !selectedImages.some((image) => image.view === 'front')) {
+      throw new Error('Missing required front image after Tencent selection.');
     }
 
     Object.assign(projectRecord, {
@@ -1467,37 +1485,24 @@ async function processBatchTwoModelsJob(batchJob) {
           batchJob,
           `[${sourceFolder}] Hyper3D selection method=${hyperSelection.method}. Selected=${hyperSelection.selectedViews.join(', ')}. Reason=${hyperSelection.reason}`,
         );
-        if (hyperImages.some((image) => image.view === 'front')) {
-          await runBatchProviderAttempt({
-            batchJob,
-            sourceDir,
-            sourceFolder,
-            sourceIndex,
-            sourceTotal,
-            modelProvider: 'hyper3d',
-            selectedImages: hyperImages,
-            editedReuseMap: tencentEditedReuseMap,
-            extraManifest: {
-              hyper3dSelectionMethod: hyperSelection.method,
-              hyper3dSelectionReason: hyperSelection.reason,
-              hyper3dSelectedViews: hyperSelection.selectedViews,
-              hyper3dViewNotes: hyperSelection.viewNotes || {},
-              sourceIgnoredFiles: scan.ignoredFiles,
-              sourceDuplicateFiles: scan.duplicateFiles,
-            },
-          });
-        } else {
-          const skipped = providerProjectRecord({
-            sourceFolder,
-            sourceIndex,
-            sourceTotal,
-            modelProvider: 'hyper3d',
-          });
-          skipped.status = 'skipped';
-          skipped.error = 'No front view was available for Hyper3D.';
-          batchJob.projects.push(skipped);
-          appendBatchLog(batchJob, `[${sourceFolder}] Hyper3D skipped: ${skipped.error}`);
-        }
+        await runBatchProviderAttempt({
+          batchJob,
+          sourceDir,
+          sourceFolder,
+          sourceIndex,
+          sourceTotal,
+          modelProvider: 'hyper3d',
+          selectedImages: hyperImages,
+          editedReuseMap: tencentEditedReuseMap,
+          extraManifest: {
+            hyper3dSelectionMethod: hyperSelection.method,
+            hyper3dSelectionReason: hyperSelection.reason,
+            hyper3dSelectedViews: hyperSelection.selectedViews,
+            hyper3dViewNotes: hyperSelection.viewNotes || {},
+            sourceIgnoredFiles: scan.ignoredFiles,
+            sourceDuplicateFiles: scan.duplicateFiles,
+          },
+        });
       } catch (error) {
         const failed = providerProjectRecord({
           sourceFolder,
@@ -1561,20 +1566,6 @@ async function processBatchHyper3dRawJob(batchJob) {
           `[${sourceFolder}] Hyper3D raw selection method=${hyperSelection.method}. Selected=${hyperSelection.selectedViews.join(', ')}. Reason=${hyperSelection.reason}`,
         );
 
-        if (!hyperImages.some((image) => image.view === 'front')) {
-          const skipped = providerProjectRecord({
-            sourceFolder,
-            sourceIndex,
-            sourceTotal,
-            modelProvider: 'hyper3d',
-          });
-          skipped.status = 'skipped';
-          skipped.error = 'No front view was available for Hyper3D.';
-          batchJob.projects.push(skipped);
-          appendBatchLog(batchJob, `[${sourceFolder}] Hyper3D raw skipped: ${skipped.error}`);
-          continue;
-        }
-
         await runBatchProviderAttempt({
           batchJob,
           sourceDir,
@@ -1627,6 +1618,142 @@ async function processBatchHyper3dRawJob(batchJob) {
   }
 }
 
+async function processBatchByModelJob(batchJob) {
+  try {
+    batchJob.status = 'running';
+    appendBatchLog(batchJob, `Batch by-model started: ${batchJob.originalName}`);
+    appendBatchLog(batchJob, `Provider=${batchJob.modelProvider}. Image source=${batchJob.imageSource}.`);
+
+    await extractZip(batchJob.zipPath, batchJob.extractDir);
+    appendBatchLog(batchJob, `ZIP extracted to ${batchJob.extractDir}`);
+
+    const sourceProjectDirs = await findImageProjectDirs(batchJob.extractDir);
+    if (!sourceProjectDirs.length) {
+      throw new Error('No subfolders with directly named image files were found in the ZIP.');
+    }
+
+    batchJob.totalSourceFolders = sourceProjectDirs.length;
+    appendBatchLog(batchJob, `Source folders found in ZIP: ${sourceProjectDirs.length}`);
+
+    for (const [index, sourceDir] of sourceProjectDirs.entries()) {
+      const sourceIndex = index + 1;
+      const sourceTotal = sourceProjectDirs.length;
+      const sourceFolder = path.basename(sourceDir);
+      const skipPhotoEdit = batchJob.imageSource === 'original';
+      appendBatchLog(batchJob, `[${sourceFolder}] Batch by-model item ${sourceIndex}/${sourceTotal} setup started.`);
+      appendBatchLog(batchJob, `[${sourceFolder}] Provider=${batchJob.modelProvider}. Image source=${batchJob.imageSource}.`);
+
+      const scan = await scanViewImages(sourceDir, VIEW_FIELDS);
+      logDetectedImages(batchJob, sourceFolder, scan);
+
+      if (batchJob.modelProvider === 'tencent') {
+        const selectedImages = selectionFromViewMap(scan.byView, TENCENT_ALLOWED_VIEWS);
+        if (!selectedImages.some((image) => image.view === 'front')) {
+          const failed = providerProjectRecord({
+            sourceFolder,
+            sourceIndex,
+            sourceTotal,
+            modelProvider: 'tencent',
+          });
+          failed.status = 'failed';
+          failed.error = 'Tencent requires a front view.';
+          failed.selectedViews = selectedImages.map((image) => image.view);
+          batchJob.projects.push(failed);
+          appendBatchLog(batchJob, `[${sourceFolder}] Tencent failed before API call: ${failed.error}`);
+          continue;
+        }
+
+        appendBatchLog(
+          batchJob,
+          `[${sourceFolder}] Tencent selected views: ${selectedImages.map((image) => image.view).join(', ')}`,
+        );
+        await runBatchProviderAttempt({
+          batchJob,
+          sourceDir,
+          sourceFolder,
+          sourceIndex,
+          sourceTotal,
+          modelProvider: 'tencent',
+          selectedImages,
+          seedRawEditedImages: skipPhotoEdit,
+          skipPhotoEdit,
+          batchSource: 'batch_by_model',
+          batchMode: 'by_model',
+          extraManifest: {
+            imageSource: batchJob.imageSource,
+            openAiPhotoEditingSkipped: skipPhotoEdit,
+            tencentSelectedViews: selectedImages.map((image) => image.view),
+            sourceIgnoredFiles: scan.ignoredFiles,
+            sourceDuplicateFiles: scan.duplicateFiles,
+          },
+        });
+        continue;
+      }
+
+      try {
+        const hyperSelection = await chooseHyper3dViewsWithOpenAi(sourceDir, scan.byView, batchJob, sourceFolder);
+        const selectedImages = selectionFromViewMap(scan.byView, hyperSelection.selectedViews);
+        appendBatchLog(
+          batchJob,
+          `[${sourceFolder}] Hyper3D by-model selection method=${hyperSelection.method}. Selected=${hyperSelection.selectedViews.join(', ')}. Reason=${hyperSelection.reason}`,
+        );
+        if (!selectedImages.length) {
+          throw new Error('Hyper3D requires at least one image.');
+        }
+
+        await runBatchProviderAttempt({
+          batchJob,
+          sourceDir,
+          sourceFolder,
+          sourceIndex,
+          sourceTotal,
+          modelProvider: 'hyper3d',
+          selectedImages,
+          seedRawEditedImages: skipPhotoEdit,
+          skipPhotoEdit,
+          batchSource: 'batch_by_model',
+          batchMode: 'by_model',
+          extraManifest: {
+            imageSource: batchJob.imageSource,
+            hyper3dSelectionMethod: hyperSelection.method,
+            hyper3dSelectionReason: hyperSelection.reason,
+            hyper3dSelectedViews: hyperSelection.selectedViews,
+            hyper3dViewNotes: hyperSelection.viewNotes || {},
+            openAiPhotoEditingSkipped: skipPhotoEdit,
+            sourceIgnoredFiles: scan.ignoredFiles,
+            sourceDuplicateFiles: scan.duplicateFiles,
+          },
+        });
+      } catch (error) {
+        const failed = providerProjectRecord({
+          sourceFolder,
+          sourceIndex,
+          sourceTotal,
+          modelProvider: 'hyper3d',
+        });
+        failed.status = 'failed';
+        failed.error = error.message;
+        batchJob.projects.push(failed);
+        appendBatchLog(batchJob, `[${sourceFolder}] Hyper3D by-model failed: ${error.message}`);
+      }
+    }
+
+    batchJob.finishedAt = new Date().toISOString();
+    const failedCount = batchJob.projects.filter((project) => project.status === 'failed').length;
+    const completedCount = batchJob.projects.filter((project) => project.status === 'completed').length;
+    batchJob.status = failedCount ? 'completed_with_errors' : 'completed';
+    appendBatchLog(
+      batchJob,
+      `Batch finished with status: ${batchJob.status}. Completed by-model runs: ${completedCount}. Failed runs: ${failedCount}.`,
+    );
+  } catch (error) {
+    batchJob.status = 'failed';
+    batchJob.finishedAt = new Date().toISOString();
+    batchJob.error = error.message;
+    appendBatchLog(batchJob, `Batch failed: ${error.message}`);
+  }
+}
+
 async function processBatchJob(batchJob) {
   if (batchJob.mode === 'two_models') {
     await processBatchTwoModelsJob(batchJob);
@@ -1634,6 +1761,10 @@ async function processBatchJob(batchJob) {
   }
   if (batchJob.mode === 'hyper3d_raw') {
     await processBatchHyper3dRawJob(batchJob);
+    return;
+  }
+  if (batchJob.mode === 'by_model') {
+    await processBatchByModelJob(batchJob);
     return;
   }
   await processConfiguredBatchJob(batchJob);
@@ -2176,19 +2307,65 @@ async function glbFilesForProject(projectName) {
   }
 }
 
-async function frontPreviewForProject(projectName) {
+const PROJECT_PREVIEW_VIEW_ORDER = [
+  'front',
+  'top',
+  'left_front',
+  'right_front',
+  'left',
+  'right',
+  'back',
+  'back_left',
+  'back_right',
+];
+
+function imageUrlForProjectInput(projectName, fileName) {
+  return `/projects/${encodeURIComponent(projectName)}/input_photos/${encodeURIComponent(fileName)}`;
+}
+
+async function previewImageForProject(projectName) {
   const inputPhotosDir = path.join(PROJECTS_DIR, projectName, 'input_photos');
   try {
     const entries = await fs.readdir(inputPhotosDir, { withFileTypes: true });
-    const frontImage = entries
+    const imageFiles = entries
       .filter((entry) => entry.isFile())
       .map((entry) => entry.name)
-      .find((fileName) => /^front\.(jpe?g|png|webp)$/i.test(fileName));
+      .filter((fileName) => /\.(jpe?g|png|webp)$/i.test(fileName))
+      .sort((a, b) => a.localeCompare(b));
 
-    if (!frontImage) return null;
+    for (const viewName of PROJECT_PREVIEW_VIEW_ORDER) {
+      const exactMatch = imageFiles.find((fileName) => {
+        const extension = path.extname(fileName).slice(1);
+        const baseName = path.basename(fileName, path.extname(fileName));
+        return /^(jpe?g|png|webp)$/i.test(extension) && baseName.toLowerCase() === viewName;
+      });
+      if (exactMatch) {
+        return {
+          view: viewName,
+          fileName: exactMatch,
+          url: imageUrlForProjectInput(projectName, exactMatch),
+        };
+      }
+
+      const prefixedMatch = imageFiles.find((fileName) => {
+        const baseName = path.basename(fileName, path.extname(fileName)).toLowerCase();
+        return baseName.startsWith(`${viewName}_`) || baseName.startsWith(`${viewName}-`);
+      });
+      if (prefixedMatch) {
+        return {
+          view: viewName,
+          fileName: prefixedMatch,
+          url: imageUrlForProjectInput(projectName, prefixedMatch),
+        };
+      }
+    }
+
+    const fallbackImage = imageFiles[0];
+    if (!fallbackImage) return null;
     return {
-      fileName: frontImage,
-      url: `/projects/${encodeURIComponent(projectName)}/input_photos/${encodeURIComponent(frontImage)}`,
+      view: null,
+      fileName: fallbackImage,
+      url: imageUrlForProjectInput(projectName, fallbackImage),
     };
   } catch (error) {
     if (error.code === 'ENOENT') return null;
@@ -2218,11 +2395,13 @@ app.get('/api/projects', async (_req, res, next) => {
     const projects = await Promise.all(
       projectNames.map(async (projectName) => {
         const manifest = await readProjectManifest(projectName);
+        const previewImage = await previewImageForProject(projectName);
         return {
           name: projectName,
           projectTitle: normalizeProjectTitle(manifest.projectTitle ?? manifest.project_title ?? ''),
           modelProvider: manifest.modelProvider || null,
-          frontPreview: await frontPreviewForProject(projectName),
+          frontPreview: previewImage,
+          previewImage,
           glbFiles: await glbFilesForProject(projectName),
         };
       }),
@@ -2787,6 +2966,8 @@ app.post('/api/batches', batchUpload.single('batch_zip'), async (req, res, next)
       return;
     }
     const mode = BATCH_MODES.has(req.body.batch_mode) ? req.body.batch_mode : 'configured';
+    const modelProvider = MODEL_PROVIDERS.has(req.body.model_provider) ? req.body.model_provider : 'tencent';
+    const imageSource = normalizeImageSource(req.body.image_source);
 
     const batchId = createBatchId();
     const batchDir = path.join(BATCH_UPLOADS_DIR, batchId);
@@ -2802,6 +2983,8 @@ app.post('/api/batches', batchUpload.single('batch_zip'), async (req, res, next)
     const batchJob = {
       batchId,
       mode,
+      modelProvider: mode === 'by_model' ? modelProvider : null,
+      imageSource: mode === 'by_model' ? imageSource : null,
       originalName: req.file.originalname,
       status: 'queued',
       startedAt,
@@ -2813,7 +2996,13 @@ app.post('/api/batches', batchUpload.single('batch_zip'), async (req, res, next)
       logs: [],
     };
     batchJobs.set(batchId, batchJob);
-    fsSync.writeFileSync(logPath, `Batch: ${batchId}\nMode: ${mode}\nSource: ${req.file.originalname}\nStarted: ${startedAt}\n\n`);
+    const byModelDetails = mode === 'by_model'
+      ? `Provider: ${modelProvider}\nImage source: ${imageSource}\n`
+      : '';
+    fsSync.writeFileSync(
+      logPath,
+      `Batch: ${batchId}\nMode: ${mode}\n${byModelDetails}Source: ${req.file.originalname}\nStarted: ${startedAt}\n\n`,
+    );
 
     processBatchJob(batchJob).catch((error) => {
       batchJob.status = 'failed';
@@ -2833,10 +3022,16 @@ app.post('/api/projects', upload.any(), async (req, res, next) => {
     const modelProvider = MODEL_PROVIDERS.has(req.body.model_provider)
       ? req.body.model_provider
       : 'tencent';
+    const imageSource = normalizeImageSource(req.body.image_source ?? req.body.hyper3d_image_source);
+    const hyper3dImageSource = modelProvider === 'hyper3d' ? imageSource : null;
+    const skipPhotoEdit = imageSource === 'original';
+    const hyper3dBangEnabled = modelProvider === 'hyper3d'
+      ? normalizeBooleanFlag(req.body.hyper3d_bang_enabled)
+      : false;
     const projectTitle = normalizeProjectTitle(req.body.projectTitle ?? req.body.project_title ?? '');
     const frontCompassMetadata = normalizeFrontCompassMetadata(req.body.frontCompassMetadata);
     const fileMap = filesByField(req.files);
-    const missing = validateRequiredUploads(fileMap);
+    const missing = validateRequiredUploads(fileMap, modelProvider);
     if (missing.length) {
       res.status(400).json({
         error: 'Missing required image upload.',
@@ -2861,6 +3056,7 @@ app.post('/api/projects', upload.any(), async (req, res, next) => {
     const manifest = {
       projectName,
       createdAt: new Date().toISOString(),
+      productionMode: 'individual',
       uploadedImages,
       savedImages,
       inputPhotoMetadata: {
@@ -2870,6 +3066,11 @@ app.post('/api/projects', upload.any(), async (req, res, next) => {
       },
       folders,
       modelProvider,
+      imageSource,
+      hyper3dImageSource,
+      hyper3dBangEnabled,
+      skipPhotoEdit,
+      openAiPhotoEditingSkipped: skipPhotoEdit,
       projectTitle,
       hyper3dSelection,
       pipelineStatus: 'uploaded',
@@ -2877,7 +3078,10 @@ app.post('/api/projects', upload.any(), async (req, res, next) => {
     const manifestPath = path.join(projectDir, 'project_manifest.json');
     await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
 
-    const job = startPipeline(projectName, projectDir, modelProvider);
+    const pipelineArgs = [];
+    if (skipPhotoEdit) pipelineArgs.push('--skip-photo-edit');
+    if (hyper3dBangEnabled) pipelineArgs.push('--hyper3d-bang');
+    const job = startPipeline(projectName, projectDir, modelProvider, pipelineArgs);
 
     res.status(201).json({
       projectName,
@@ -2885,6 +3089,9 @@ app.post('/api/projects', upload.any(), async (req, res, next) => {
       manifestPath,
       savedImages,
       modelProvider,
+      imageSource,
+      hyper3dImageSource,
+      hyper3dBangEnabled,
       projectTitle,
       nextStep: 'python_pipeline_running',
       pipeline: publicJob(job),

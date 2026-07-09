@@ -687,15 +687,23 @@ body {
 
 .angle-front {
   left: 34%;
-  top: 5.5%;
+  top: 16%;
   width: 32%;
   height: 16%;
   clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%);
 }
 
+.angle-top {
+  left: 39%;
+  top: 2.5%;
+  width: 22%;
+  height: 11%;
+  clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
+}
+
 .angle-left-front {
   left: 10%;
-  top: 7%;
+  top: 12%;
   width: 24%;
   height: 18%;
   clip-path: polygon(18% 0, 100% 20%, 72% 100%, 0 78%);
@@ -704,7 +712,7 @@ body {
 
 .angle-right-front {
   right: 10%;
-  top: 7%;
+  top: 12%;
   width: 24%;
   height: 18%;
   clip-path: polygon(0 20%, 82% 0, 100% 78%, 28% 100%);
