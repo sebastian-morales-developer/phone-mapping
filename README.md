@@ -190,6 +190,15 @@ No `phone_mapping_project.json` is required for this mode. The app uses each sub
 
 The same provider rules used in Individual Production are applied to every subfolder.
 
+## 3D Provider API References
+
+The app currently uses these exact 3D generation models:
+
+- `Hyper3D Rodin Gen-2.5`: `Gen-2.5 Generation` API.
+  Documentation: https://developer.hyper3d.ai/api-specification/rodin-gen2.5
+- `Tencent Hunyuan 3.1`: 3D AI Studio Tencent Hunyuan 3D generation API.
+  Documentation: https://www.3daistudio.com/Platform/API/Documentation/3d-generation/tencent-hunyuan
+
 ## Provider Rules
 
 ### Tencent Hunyuan 3.1 Through 3D AI Studio
