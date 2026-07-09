@@ -55,9 +55,12 @@ Create a `.env` file in the project root:
 OPENAI_API_KEY=your_openai_key
 HYPER3D_API_KEY=your_hyper3d_key
 API_KEY_3DAISTUDIO=your_3daistudio_key
+PROJECTS_PATH=projects
 ```
 
 Use `.env.example` as the safe template. It contains only the variable names and no secrets.
+
+`PROJECTS_PATH=projects` means the app will store and read generated projects from the `projects/` folder inside the app root. This can be changed in another server if project assets need to live in a different folder.
 
 ## Install Node Dependencies
 
@@ -158,45 +161,43 @@ If you need to import existing generated projects from another machine or backup
 
 Use this mode to create one project manually.
 
-You choose the 3D provider, then drag each photo into the correct view slot. The original file name does not matter in individual mode because the selected slot defines the view label.
+You choose the 3D provider, choose the image source, then drag each photo into the correct view slot. The original file name does not matter in individual mode because the selected slot defines the view label.
 
-### Batch Production
+Available 3D providers:
 
-Use this mode to upload a ZIP package with one subfolder per project.
+- `Tencent Hunyuan 3.1`: 3D AI Studio multiview workflow.
+- `Hyper3D Rodin Gen-2.5`: Hyper3D multiview workflow.
 
-Each subfolder must include a `phone_mapping_project.json` file:
+Available image sources:
 
-```json
-{
-  "model_provider": "tencent",
-  "projectTitle": "Optional project title"
-}
-```
+- `AI-cleaned images`: the app first sends the uploaded photos through OpenAI image editing to remove obstacles or visual clutter, then sends the cleaned images to the selected 3D provider.
+- `Original images`: the app skips OpenAI cleanup and sends the selected original images directly to the selected 3D provider.
 
-The model provider must be either:
+### Batch Production By Model
 
-```text
-tencent
-hyper3d
-```
+Use this mode to upload a ZIP package with one subfolder per project. The selected provider and selected image source apply to every subfolder in the ZIP.
 
-### Batch Production Two Models
-
-Use this mode to test both providers automatically from a ZIP package.
-
-Each subfolder only needs named images. No `phone_mapping_project.json` is required. The app uses the subfolder name as the project title.
-
-For Tencent, the app selects compatible Tencent views and can test the original or inverted orientation to maximize usable views.
-
-For Hyper3D, the app can select up to five views from the available images. When there are more than five candidate images, the pipeline can use OpenAI image analysis to choose the best set.
-
-## Supported Views
-
-### Tencent Hunyuan 3.1 through 3D AI Studio
-
-Tencent supports up to six view slots in this app:
+Each subfolder should contain named images such as:
 
 ```text
+project_folder/front.jpg
+project_folder/top.jpg
+project_folder/left_front.jpg
+project_folder/right.jpg
+```
+
+No `phone_mapping_project.json` is required for this mode. The app uses each subfolder name as the project title.
+
+The same provider rules used in Individual Production are applied to every subfolder.
+
+## Provider Rules
+
+### Tencent Hunyuan 3.1 Through 3D AI Studio
+
+Tencent accepts up to seven supported views in this app:
+
+```text
+top
 front
 left_front
 right_front
@@ -205,13 +206,20 @@ right
 back
 ```
 
-This provider can work with fewer images, but the final model quality depends heavily on how complete and coherent the available views are.
+Rules:
+
+- `front` is required.
+- If valid Tencent views are uploaded, the app sends all supported views it can use.
+- There is no OpenAI view-selection step for Tencent.
+- `back_left` and `back_right` are not sent to Tencent.
+- Image cleanup is controlled by the selected image source: `AI-cleaned images` or `Original images`.
 
 ### Hyper3D Rodin Gen-2.5
 
-Hyper3D supports up to five uploaded images, selected from eight possible angles:
+Hyper3D accepts a maximum of five images per generation, selected from nine possible view slots in this app:
 
 ```text
+top
 front
 left_front
 left
@@ -222,7 +230,17 @@ right
 right_front
 ```
 
-This is useful when the available photos cover diagonal/back angles, but only five images can be sent to the provider.
+Rules:
+
+- At least one image is required, from any supported angle.
+- `front` is not required for Hyper3D.
+- If five or fewer images are uploaded, the app uses those images.
+- If more than five images are uploaded, the app uses OpenAI image analysis to choose the five images that look most useful for reconstruction.
+- Image cleanup is controlled by the selected image source: `AI-cleaned images` or `Original images`.
+
+Special top-only behavior:
+
+If a Hyper3D project is created with only one `top` image, the pipeline applies the custom top-only GLB post-processing step before rendering orthophotos.
 
 ## Viewer Page
 
@@ -244,9 +262,9 @@ The reference scale is used to convert image/model dimensions into approximate r
 Basic flow:
 
 1. Open a project in the viewer.
-2. Click `Set Reference Scale`.
-3. Select an orthophoto.
-4. Draw a measurement line over a known real-world reference, for example a door height.
+2. Click `Set Reference Scale`, or click one of the orthophotos.
+3. Select any orthophoto that contains a known real-world reference.
+4. Draw a measurement line between two known points, such as the top and bottom of a front door, garage door, entry door, wall segment, or any reference dimension that was measured in the real world.
 5. Enter the real measurement in meters.
 6. Save the reference scale.
 
